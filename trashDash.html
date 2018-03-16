@@ -61,7 +61,7 @@ var screen = "title";
 
 
 //Static images - text, logos, backgrounds
-staticImageText = ["title", "clickToPlay", "pressSpaceForInstructions", "big", "vanWickle", "instructions1", "instructions2", "Instructions3", "gameBackground", "josBackground", "rattyBackground", "andrewsBackground", "bossBackground", "iceCream", "andrewsCrowd", "wordBackground", "healthBar", "lastCall", "brokenMachine", "phoLine", "winScreen", "difficultyMode", "abcStatic", "sncStatic", "auditStatic", "plmeTitle", "bluenoIntro", "rockTreeIntro", "riptaIntro", "complete1", "complete2", "todayNotification", "clickerNotification", "announcement1"];
+staticImageText = ["title", "clickToPlay", "pressSpaceForInstructions", "big", "vanWickle", "instructions1", "instructions2", "instructions3", "gameBackground", "josBackground", "rattyBackground", "andrewsBackground", "bossBackground", "iceCream", "andrewsCrowd", "wordBackground", "healthBar", "lastCall", "brokenMachine", "phoLine", "winScreen", "difficultyMode", "abcStatic", "sncStatic", "auditStatic", "plmeTitle", "bluenoIntro", "rockTreeIntro", "riptaIntro", "complete1", "complete2", "todayNotification", "clickerNotification", "announcement1"];
 staticImages = [];
 staticImageText.forEach(function(image) {
     window[image] = document.createElement("img");
@@ -1549,7 +1549,7 @@ function drawInstruction() {
     } else if (screen == "instruction2") {
         canvasContext.drawImage(instructions2, 0, 0, screenWidth, screenHeight);
     } else if (screen == "instruction3") {
-        canvasContext.drawImage(Instructions3, 0, 0, screenWidth, screenHeight);
+        canvasContext.drawImage(instructions3, 0, 0, screenWidth, screenHeight);
     }
     
 
