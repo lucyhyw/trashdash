@@ -46,7 +46,7 @@ var wasteRepeat, progress, clickerTime, mailTime;
 var plmeCount = 0;
 var plmeMode = false;
 var openCurriculumMode = false;
-var openCurriculumUnlocked = false;
+var openCurriculumUnlocked = true;
 
 var pause = false;
 
@@ -274,57 +274,57 @@ wasteTypes = [
 {name: 'coldCup',
 type: 'none',
 frames: 4,
-place: [0, 1, 2]},
+place: [0, 1, 2, 3]},
 
 {name: 'plasticWare',
 type: 'gray',
 frames: 2,
-place: [0, 1, 2]},
+place: [0, 1, 2, 3]},
 
 {name: 'chips',
 type: 'gray',
 frames: 2,
-place: [0, 1, 2]},
+place: [0, 1, 2, 3]},
 
 {name: 'marinara',
 type: 'blue',
 frames: 2,
-place: [0]},
+place: [0, 3]},
 
 {name: 'glassBottle',
 type: 'blue',
 frames: 2,
-place: [0, 2]},
+place: [0, 2, 3]},
 
 {name: 'lactaid',
 type: 'blue',
 frames: 2,
-place: [0, 1, 2]},
+place: [0, 1, 2, 3]},
 
 {name: 'pizza',
 type: 'green',
 frames: 2,
-place: [1, 2]},
+place: [1, 2, 3]},
 
 {name: 'tea',
 type: 'green',
 frames: 2,
-place: [1, 2]},
+place: [1, 2, 3]},
 
 {name: 'chopSticks',
 type: 'green',
 frames: 2,
-place: [2]},
+place: [2, 3]},
 
 {name: 'bones',
 type: 'green',
 frames: 2,
-place: [1, 2]},
+place: [1, 2, 3]},
 
 {name: 'toGo',
 type: 'green',
 frames: 2,
-place: [1, 2]},
+place: [1, 2, 3]},
 
 /*{name: 'napkins',
 type: 'green',
@@ -334,64 +334,64 @@ place: [0]},*/
 {name: 'hotCup',
 type: 'gray',
 frames: 2,
-place: [0, 1, 2]},
+place: [0, 1, 2, 3]},
 
 {name: 'muffin',
 type: 'gray',
 frames: 2,
-place: [0, 1]},
+place: [0, 1, 3]},
 
 {name: 'condiments',
 type: 'gray',
 frames: 2,
-place: [0, 1]},
+place: [0, 1, 3]},
 
 {name: 'pho',
 type: 'blue',
 frames: 2,
-place: [2]},
+place: [2, 3]},
 
 {name: 'pembroke',
 type: 'powerDown',
 frames: 2,
-place: [0, 1, 2],},
+place: [0, 1, 2, 3],},
 
 {name: 'smoothie',
 type: 'powerUp',
 frames: 4,
-place: [0, 1, 2]},
+place: [0, 1, 2, 3]},
 
 {name: 'morningMail',
 type: 'powerUp',
 frames: 2,
-place: [0, 1, 2]},
+place: [0, 1, 2, 3]},
 
 {name: 'iClicker',
 type: 'powerUp',
 frames: 2,
-place: [0, 1, 2]}
+place: [0, 1, 2, 3]}
 ];
 
 specialTypes = [
 {name: 'pembroke',
 type: 'powerDown',
 frames: 2,
-place: [0, 1, 2],},
+place: [0, 1, 2, 3],},
 
 {name: 'smoothie',
 type: 'powerUp',
 frames: 4,
-place: [0, 1, 2]},
+place: [0, 1, 2, 3]},
 
 {name: 'morningMail',
 type: 'powerUp',
 frames: 2,
-place: [0, 1, 2]},
+place: [0, 1, 2, 3]},
 
 {name: 'iClicker',
 type: 'powerUp',
 frames: 2,
-place: [0, 1, 2]}
+place: [0, 1, 2, 3]}
 ];
 
 
@@ -474,6 +474,7 @@ new Button("playButton", 800/2 - 150/2, 600 * 7.5/10, function() {
     if (this.hover) {
         //Start game when playButton pressed
         if (pause == false) {
+            openCurriculumMode = false;
             newGame();
         } else {
             togglePause();
@@ -493,6 +494,7 @@ new Button("helpButton", 800 * 9/10 - 150, 600 * 7/10, function() {
 new Button("openCurriculum", 800/2 - 150/2, 600 * 6/10, function() {
     if (this.hover && openCurriculumUnlocked == true) {
         openCurriculumMode = true;
+        newGame();
     };
 }),
 
@@ -841,7 +843,20 @@ function events() {
                 }
                 
                 if (startClick > 0 && click(mousePos.x, mousePos.y, waste) && (waste.type == 'blue' || waste.type == 'gray' || waste.type == 'green')) {
-                    score += 1;
+                    if (mode == "abc") {
+                        score += 2;
+                    } else if (mode == "snc") {
+                        score += 1;
+                    };
+                    if(openCurriculumMode) {
+                        if (mode == "abc") {
+                            difficulty += 0.1;
+                        } else if (mode == "snc") {
+                            difficulty += 0.07;
+                        } else if (mode == "audit") {
+                            difficulty += 0.05;
+                        };
+                    };
                     waste.active = false;
                 };
             })
@@ -912,7 +927,20 @@ function animate() {
             };*/
             waste.update();
             if(waste.hit() && waste.present == false) {
-                score += 1;
+                if (mode == "abc") {
+                    score += 2;
+                } else if (mode == "snc") {
+                    score += 1;
+                };
+                if(openCurriculumMode) {
+                    if (mode == "abc") {
+                        difficulty += 0.1;
+                    } else if (mode == "snc") {
+                        difficulty += 0.07;
+                    } else if (mode == "audit") {
+                        difficulty += 0.05;
+                    };
+                };
                 if (bossBegin == true && (level == 1 || level == 3)) {
                     bossLife -= 10;
                 }
@@ -999,7 +1027,7 @@ function addWaste() {
     }
     //Add at random intervals
     if (bossBegin == true && level == 3) {
-        var timeBetween = 4000;
+        var timeBetween = 3000;
     //} else if (difficulty >= 5) {
         //var timeBetween = 1000;
     } else {
@@ -1110,7 +1138,7 @@ function timer(level) { //waste countDown
             level += 1;
             clearInterval(progress);
         }*/
-    },3000); //-----------------------------------------------------Changes speed of game
+    },3000); //should be 3000-----------------------------------------------------Changes speed of game
 }
 
 
@@ -1158,6 +1186,8 @@ function bossFight(level) {
         clearTimeout(wasteRepeat);
         console.log("clear waste");
         if (level == 3) {
+            actionSong.pause();
+            openCurriculumUnlocked = true;
             screen = "end";
         };
     };
@@ -1382,18 +1412,24 @@ function newGame() {
     lives = startLives;
     score = 0;
     difficulty = startDifficulty;
-    level = 1;
+    if (!openCurriculumMode) {
+        level = 1;
+    } else {
+        level = 4;
+    };
     wasteList = [];
     firstWaste = true;
     boss = false;
     bossBegin = false;
-    roundwon = false;
+    roundWon = false;
     startClick = 0;
     startMail = 0;
     speedUp = false;
     keyList = [];
     player.type = 'black';
-    timer(level);
+    if (!openCurriculumMode) {
+        timer(level);
+    };
     addWaste();
 };
 
@@ -1449,14 +1485,17 @@ function drawGame() {
     if (frameTick > 17) {
         frameTick = 0;
     }
-        
-    if (level == 1) {
-        canvasContext.drawImage(josBackground,0,0, screenWidth, screenHeight);
-    } else if (level == 2) {
-        canvasContext.drawImage(rattyBackground, 0, 0, screenWidth, screenHeight);
-    } else if (level == 3) {
-        canvasContext.drawImage(andrewsBackground, 0, 0, screenWidth, screenHeight);
-    }
+    if (!openCurriculumMode) {    
+        if (level == 1) {
+            canvasContext.drawImage(josBackground,0,0, screenWidth, screenHeight);
+        } else if (level == 2) {
+            canvasContext.drawImage(rattyBackground, 0, 0, screenWidth, screenHeight);
+        } else if (level == 3) {
+            canvasContext.drawImage(andrewsBackground, 0, 0, screenWidth, screenHeight);
+        };
+    } else {
+        canvasContext.drawImage(bossBackground, 0, 0, screenWidth, screenHeight);
+    };
     player.draw();
     
     if (boss == true) {
@@ -1486,7 +1525,11 @@ function drawGame() {
     //colorText("SCORE: " + score, screenWidth/10, screenHeight/10, 'black');
     colorText("LIVES: " + lives, screenWidth*8.75/10, screenHeight*1.6/10, 'black');
     canvasContext.drawImage(wordBackground, screenWidth*3.75/10, screenHeight*0.8/10, screenWidth*2.5/10, screenHeight*1/10);
-    colorText(gameTime, screenWidth/2, screenHeight*1.6/10, 'black');
+    if (!openCurriculumMode) {
+        colorText(gameTime, screenWidth/2, screenHeight*1.6/10, 'black');
+    } else {
+        colorText("SCORE: " + score, screenWidth/2, screenHeight*1.6/10, 'black');
+    };
     //colorText("LEVEL: " + level, screenWidth/2, screenHeight/6, 'black');
     
 }
@@ -1508,7 +1551,7 @@ function drawTitle() {
     canvasContext.drawImage(pressSpaceForInstructions, screenWidth/2 - (pressSpaceForInstructions.width*screenWidth/800)/2, screenHeight/2, pressSpaceForInstructions.width*screenWidth/800, pressSpaceForInstructions.height*screenHeight/600);*/
     
     menuButtons.forEach(function(button) {
-        if (button.name == "playButton" || button.name == "helpButton" || button.name == "moreButton" || button.name == "openCurriculum" || (button.name == "abc" && mode != "abc" && plmeMode == false) || (button.name == "snc" && mode != "snc" && plmeMode == false) || (button.name == "audit" && mode != "audit" && plmeMode == false)) {
+        if (button.name == "playButton" || button.name == "helpButton" || button.name == "moreButton" || (button.name == "openCurriculum" && openCurriculumUnlocked) || (button.name == "abc" && mode != "abc" && plmeMode == false) || (button.name == "snc" && mode != "snc" && plmeMode == false) || (button.name == "audit" && mode != "audit" && plmeMode == false)) {
             button.draw();
         };
     });
@@ -1611,7 +1654,7 @@ function drawEnd() {
     colorText("Click to Play Again", canvas.width/2, canvas.height*3/4, 'black');*/
     
     menuButtons.forEach(function(button) {
-        if (button.name == "menuButton" || button.name == "helpButton" || button.name == "playButton") {
+        if (button.name == "menuButton" || button.name == "helpButton" || button.name == "playButton" || (button.name == "openCurriculum" && openCurriculumUnlocked)) {
             button.draw();
         };
     });
