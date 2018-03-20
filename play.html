@@ -4,6 +4,17 @@
 <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
 <meta content="utf-8" http-equiv="encoding">
 <title>Trash Dash</title>
+<style type="text/css">
+    @font-face {
+    font-family: 'Trash Dash';
+    src: url('font/Trash-Dash.woff2') format('woff2'),
+        url('font/Trash-Dash.woff') format('woff'),
+        url('font/Trash-Dash.ttf') format('truetype'),
+        url('font/Trash-Dash.svg#Trash-Dash') format('svg');
+    font-weight: normal;
+    font-style: normal;
+    }
+</style>
 </head>
 <canvas id="gameCanvas" width="800" height="600"></canvas>
 <body>
@@ -47,25 +58,35 @@ var plmeCount = 0;
 var plmeMode = false;
 var openCurriculumMode = false;
 var openCurriculumUnlocked = false;
+var mute = false;
 
 var pause = false;
 
 
 //Loading images
 var loadCount = 0;
+var loadCaptionCount = 0;
+var loadStep = 0;
 
 
 //Different gameplay screens
 //Starts game on title screen
-var screen = "title";
+var screen;// = "title";
 
 
 //Static images - text, logos, backgrounds
-staticImageText = ["title", "clickToPlay", "pressSpaceForInstructions", "big", "vanWickle", "instructions1", "instructions2", "instructions3", "gameBackground", "josBackground", "rattyBackground", "andrewsBackground", "bossBackground", "iceCream", "andrewsCrowd", "wordBackground", "healthBar", "lastCall", "brokenMachine", "phoLine", "winScreen", "difficultyMode", "abcStatic", "sncStatic", "auditStatic", "plmeTitle", "bluenoIntro", "rockTreeIntro", "riptaIntro", "complete1", "complete2", "todayNotification", "clickerNotification", "announcement1"];
+staticImageText = ["title", "clickToPlay", "pressSpaceForInstructions", "big", "vanWickle", "instructions1", "instructions2", "instructions3", "gameBackground", "josBackground", "rattyBackground", "andrewsBackground", "bossBackground", "iceCream", "andrewsCrowd", "wordBackground", "healthBar", "lastCall", "brokenMachine", "phoLine", "winScreen", "loseScreen", "openCurriculumEnd", "difficultyMode", "abcStatic", "sncStatic", "auditStatic", "plmeTitle", "bluenoIntro", "rockTreeIntro", "riptaIntro", "complete1", "complete2", "todayNotification", "clickerNotification", "announcement1", "healthLabel"];
 staticImages = [];
 staticImageText.forEach(function(image) {
     window[image] = document.createElement("img");
     staticImages.push(window[image]);
+});
+
+loadCaptionsText = ["load1", "load2", "load3", "load4", "load5"];
+loadCaptions = [];
+loadCaptionsText.forEach(function(image) {
+    window[image] = document.createElement("img");
+    loadCaptions.push(window[image]);
 });
 
 
@@ -81,7 +102,7 @@ function Waste(I, itemIndex) {
     I.img = itemIndex.img;
     I.frames = itemIndex.frames;
     I.currentFrame = itemIndex.currentFrame;
-    I.yRatio = (Math.random()*(player.img.height - I.img.height)*screenHeight/600 + player.y)/screenHeight;
+    I.yRatio = (Math.random()*(player.img.height - I.img.height)*screenHeight/600 + screenHeight * 3/10)/screenHeight;
     I.xRatio = 1;
     I.riptaSpeed = Math.random()* 6 + 1;
     I.riptaTime = Math.floor(Math.random() * 100 + 30);
@@ -420,10 +441,15 @@ var menuButtons = [
 new Button("moreButton", 800 * 1/10, 600 * 7/10, function() {
     if (this.hover && screen == "title") {
         window.open("https://www.brown.edu/initiatives/brown-is-green/home");
-        if (plmeCount == 0) {
+        /*if (plmeCount == 0) {
             plmeTimer();
-        };
+        };*/
         plmeCount += 1;
+        if (plmeCount >= 10) {
+            plmeMode = true;
+            mode = "snc";
+            startLives = 10;
+        };
     };
 }),
 
@@ -438,7 +464,7 @@ new Button("menuButton", 800 * 1/10, 600 * 7/10, function() {
             clearTimeout(clickerTime);
             clearTimeout(mailTime);
             console.log("clear waste");
-            actionSong.pause();
+            //actionSong.pause();
         };
         screen = "title";
         console.log("menuButton");
@@ -522,10 +548,28 @@ new Button("audit", (400 + 24) + 50, 600 * 9.4/10, function() {
     };
 }),
 
-new Button("pauseButton", 800 * 8/10, 600 * 9.4/10, function() {
+new Button("pauseButton", 800 * 6.9/10, 600 * 9.4/10 + 6, function() {
     if (this.hover && screen == "game") {
         togglePause();
     };
+}),
+
+new Button("muteButton", 800 * 8/10, 600 * 9.4/10, function() {
+    if (this.hover && mute == true) {
+        mute = false;
+        playMusic();
+        //mute = false;
+        console.log('unmute');
+    };
+}),
+
+new Button("volumeButton", 800 * 8/10, 600 * 9.4/10, function() {
+    if (this.hover && mute == false) {
+        mute = true;
+        actionSong.pause();
+        //mute = true;
+        console.log('mute');
+    }
 })];
 
 
@@ -637,8 +681,17 @@ var blueno = {
 
 var treeImg = document.createElement("img");
 
+var loading = {
+    img: document.createElement("img"),
+    x: screenWidth/2,
+    y: screenHeight/2,
+    frames: 3,
+    currentFrame: 1
+};
+
 //Music
-var actionSong = document.createElement("audio");
+//var actionSong = document.createElement("audio");
+var actionSong = new Audio("music/actionSong.wav");
 
 
 //Create Waste lists for each level
@@ -661,34 +714,96 @@ window.onload = function() {
     canvas = document.getElementById('gameCanvas');
     canvasContext = canvas.getContext('2d');
     
+    loading.img.src = "images/sprites/loading.png";
+    loading.img.onload = function() {
+        loadAction();
+    };
+    
+    for (var i = 0; i < loadCaptions.length; i++) {
+        loadCaptions[i].src = "images/staticImages/loading/" + loadCaptionsText[i] + ".png";
+
+        loadCaptions[i].onload = function() {
+            loadCount += 1;
+            loadCaptionCount += 1;
+            console.log(loadCount);
+        };
+    };
+
+    
     
     wasteTypes.forEach(function(waste) {
-        waste.onload = function() {
-            loadCount += 1;
-        }
         waste.img.src = "images/sprites/" + waste.name + ".png";
+        
+        waste.img.onload = function() {
+            loadCount += 1;
+            console.log(loadCount);
+        };
     });
     
     present.img.src = "images/sprites/present.png";
+    
+    present.img.onload = function() {
+        loadCount += 1;
+        console.log(loadCount);
+    };
+    
     treeImg.src = "images/sprites/fakeTree.png";
+    
+    treeImg.onload = function() {
+        loadCount += 1;
+        console.log(loadCount);
+    };
         
    for (var i = 0; i < staticImages.length; i++) {
         staticImages[i].src = "images/staticImages/" + staticImageText[i] + ".png";
+        
+        staticImages[i].onload = function() {
+            loadCount += 1;
+            console.log(loadCount);
+        };
     }
 
     //Load player sprite
     player.img.src = "images/sprites/runWilliam.png";
+    player.img.onload = function() {
+        loadCount += 1;
+        console.log(loadCount);
+    };
+    
     playerStatic.src = "images/sprites/williamClassic.png";
+    playerStatic.onload = function() {
+        loadCount += 1;
+        console.log(loadCount);
+    };
     
     //boss sprites
     ripta.img.src = "images/sprites/ripta.png";
+    ripta.img.onload = function() {
+        loadCount += 1;
+        console.log(loadCount);
+    };
+    
     blueno.img.src = "images/sprites/blueno.png";
+    blueno.img.onload = function() {
+        loadCount += 1;
+        console.log(loadCount);
+    };
+    
     realTree.img.src = "images/sprites/realTree.png";
+    realTree.img.onload = function() {
+        loadCount += 1;
+        console.log(loadCount);
+    };
     
 
     //Load button sprites
     for (var i = 0; i < menuButtons.length; i++) {
-        menuButtons[i].img.src = "images/buttons/" + ["moreButton", "menuButton", "backButton", "nextButton", "playButton", "helpButton", "openCurriculum", "abc", "snc", "audit", "pauseButton"][i] + ".png";
+        menuButtons[i].img.src = "images/buttons/" + ["moreButton", "menuButton", "backButton", "nextButton", "playButton", "helpButton", "openCurriculum", "abc", "snc", "audit", "pauseButton", "muteButton", "volumeButton"][i] + ".png";
+        
+        menuButtons[i].img.onload = function() {
+            loadCount += 1;
+            console.log(loadCount);
+        };
     };
 
     for (var i = 0; i < descriptiveButtons.length; i++) {
@@ -698,18 +813,36 @@ window.onload = function() {
         
         descriptiveButtons[i].img.src = "images/buttons/" + descriptiveButtons[i].name + "Button.png";
         descriptiveButtons[i].description.src = "images/staticImages/" + descriptiveButtons[i].name + "Description.png";
+        
+        descriptiveButtons[i].img.onload = function() {
+            loadCount += 1;
+            console.log(loadCount);
+        };
+        descriptiveButtons[i].description.onload = function() {
+            loadCount += 1;
+            console.log(loadCount);
+        };
     };
     
     for (var i = 0; i < directionButtons.length; i++) {
         directionButtons[i].img.src = "images/buttons/" + ["aDirection", "dDirection",/* "sDirection",*/ "wDirection"][i] + ".png";
+        
+        directionButtons[i].img.onload = function() {
+            loadCount += 1;
+            console.log(loadCount);
+        };
     };
     
     //Load cursor sprites
     cursor.img.src = "images/sprites/cursor.png";
+    cursor.img.onload = function() {
+        loadCount += 1;
+        console.log(loadCount);
+    };
     
     
     //Load music
-    actionSong.src = "music/actionSong.wav";
+    //actionSong.src = "music/actionSong.wav";
     
     
     //PowerUp.prototype = new Waste({}, 0)
@@ -723,10 +856,9 @@ function events() {
     //For all key-press events
     document.addEventListener('keydown', function(evt) {
         if (screen == "title") {
-            /*if (evt.keyCode == 32) { //Space-bar
-                //Go to instruction screen
-                screen = "instruction1";
-            }*/
+            if (evt.keyCode == 32) { //Space-bar
+                //openCurriculumUnlocked = true;
+            };
         } else if (screen == "game") {
             //Change player.type based on the key pressed
             /*if (evt.keyCode == 68) { //D-key
@@ -800,6 +932,24 @@ function events() {
             })
         //}
     })
+    
+    //Mouse up events
+    canvas.addEventListener('mouseup', function(evt) {
+        for (var i = 0; i < menuButtons.length; i ++) {
+            if (!actionSong.paused && menuButtons[i].name == "volumeButton") {
+                menuButtons[i].action();
+                break;
+            } else if (actionSong.paused && menuButtons[i].name == "muteButton") {
+                menuButtons[i].action();
+                break;
+            };
+        };
+        /*if (actionSong.paused) {
+            mute = true;
+        } else {
+            mute = false;
+        }*/
+    });
     
     
     //For all mouse-click events
@@ -894,7 +1044,17 @@ function events() {
         else if (screen != "game") {
             //Handle button presses
             buttons.forEach(function(button) {
-                button.action();
+                if (button.name == "muteButton") {
+                    if (mute == true) {
+                        //button.action();
+                    }
+                } else if(button.name == "volumeButton") {
+                    if (mute == false) {
+                        //button.action();
+                    };
+                } else {
+                    button.action();
+                }
             });
 
             
@@ -902,7 +1062,14 @@ function events() {
             playButton.action();
             nextButton.action();*/
         }
-    })
+    });
+    
+    actionSong.addEventListener('timeupdate', function(){
+                var buffer = 5.075;
+                if(this.currentTime > this.duration - buffer){
+                    this.currentTime = 0
+                    this.play()
+                }}, false);
 };
 
 
@@ -911,7 +1078,7 @@ function events() {
 function animate() {
     //Call this function repeatedly
     requestAnimationFrame(animate);
-    
+        
     //Dynamically scale the screen proportionally
     resizeScreen();
     //Resize canvas
@@ -956,7 +1123,7 @@ function animate() {
                     clearTimeout(mailTime);
                     console.log("clear waste");
                     screen = "end";
-                    actionSong.pause();
+                    //actionSong.pause();
                 };
             } else if (waste.name == 'pembroke') {
                 pembrokePower(waste);
@@ -982,7 +1149,9 @@ function animate() {
         drawEnd();
     } else if (screen == "roundOver") {
         drawRoundOver();
-    }
+    } else if (screen == "load") {
+        drawLoad();
+    };
     
     
     
@@ -1144,7 +1313,11 @@ function timer(level) { //waste countDown
 
 function bossFight(level) {
     //colorRect(10, 10, bossLife * 5, 100, 'red');
-    canvasContext.drawImage(healthBar, 0, screenHeight*0.5/10, (bossLife * 2.75) * screenWidth/800, screenHeight * 50/600)
+    //canvasContext.drawImage(healthBar, healthBar.width - healthBar.width * bossLife/100, 0, healthBar.width * bossLife/100, healthBar.height, 0, screenHeight*0.5/10, (healthBar.width * 1.25) * (bossLife/100) * screenWidth/800, healthBar.height * 1.25 * screenHeight/600);
+    canvasContext.drawImage(healthBar, 0, 0, healthBar.width * bossLife/100, healthBar.height, screenWidth - healthBar.width * 1.25 * bossLife/100 * screenWidth/800, screenHeight * 0.8/10, healthBar.width * 1.25 * bossLife/100 * screenWidth/800, healthBar.height * 1.25 * screenHeight/600);
+    canvasContext.drawImage(healthLabel, screenWidth * 14/15 - healthLabel.width * screenWidth/800, screenWidth*0.3/10, healthLabel.width * screenWidth/800, healthLabel.height * screenHeight/600);
+        //bossLife * 2.75
+        //screenHeight * 50/600
     if (level == 1) {
         //colorRect(screenWidth*9/10, screenHeight/2 - 100, 100, 200, 'blue');
         spriteUpdate(blueno, 1, 2, screenWidth * 14/15 - player.img.width/player.frames * screenWidth/800, screenHeight * 3/10 + (player.img.height - blueno.img.height) * screenHeight/600);
@@ -1186,7 +1359,7 @@ function bossFight(level) {
         clearTimeout(wasteRepeat);
         console.log("clear waste");
         if (level == 3) {
-            actionSong.pause();
+            //actionSong.pause();
             openCurriculumUnlocked = true;
             screen = "end";
         };
@@ -1252,6 +1425,18 @@ function pembrokePower(waste) {
     if (click(cursor.x, cursor.y, waste)) {
         lives -= 1;
         waste.active = false;
+        if(lives <= 0 && mode != "audit") {
+            //End game when all lives gone
+            clearInterval(progress);
+            wasteList = [];
+            difficulty = startDifficulty;
+            clearTimeout(wasteRepeat);
+            clearTimeout(clickerTime);
+            clearTimeout(mailTime);
+            console.log("clear waste");
+            screen = "end";
+            //actionSong.pause();
+        };
     };
 };
 
@@ -1407,7 +1592,7 @@ function resizeScreen() {
 
 //Restarts the game
 function newGame() {
-    actionSong.play();        
+    //actionSong.play();
     screen = "game";
     lives = startLives;
     score = 0;
@@ -1444,7 +1629,7 @@ function togglePause() {
     }
 };
 
-function plmeTimer() {
+/*function plmeTimer() {
     setTimeout(function() {
         if (plmeCount < 10) {
             plmeCount = 0;
@@ -1454,7 +1639,7 @@ function plmeTimer() {
             startLives = 10;
         };
     }, 5000)
-};
+};*/
 
 function notifications() {
     if (roundWon == true) {
@@ -1465,18 +1650,40 @@ function notifications() {
         };
     } else {
         if (startMail > 0) {
-            canvasContext.drawImage(todayNotification, 10 * screenWidth/800, 10 * screenHeight/600, todayNotification.width * 1.5 * screenWidth/800, todayNotification.height * 1.5 * screenHeight/600);
+            canvasContext.drawImage(todayNotification, screenWidth - (todayNotification.width * 1.5 + 10) * screenWidth/800, 10 * screenHeight/600, todayNotification.width * 1.5 * screenWidth/800, todayNotification.height * 1.5 * screenHeight/600);
             
             canvasContext.drawImage(announcement1, (800/2 - announcement1.width/2) * screenWidth/800, screenHeight/3 + (player.img.height + 5) * screenHeight/600, announcement1.width * screenWidth/800, announcement1.height * screenHeight/600);
 
             if (startClick > 0) {
-                canvasContext.drawImage(clickerNotification, 10 * screenWidth/800, 50 * screenHeight/600, clickerNotification.width * 1.5 * screenWidth/800, clickerNotification.height * 1.5 * screenHeight/600);
+                canvasContext.drawImage(clickerNotification, screenWidth - (clickerNotification.width * 1.5 + 10) * screenWidth/800, 50 * screenHeight/600, clickerNotification.width * 1.5 * screenWidth/800, clickerNotification.height * 1.5 * screenHeight/600);
             }
         } else if (startClick > 0) {
-            canvasContext.drawImage(clickerNotification, 10 * screenWidth/800, 10 * screenHeight/600, clickerNotification.width * 1.5 * screenWidth/800, clickerNotification.height * 1.5 * screenHeight/600);
+            canvasContext.drawImage(clickerNotification, screenWidth - (clickerNotification.width * 1.5 + 10) * screenWidth/800, 10 * screenHeight/600, clickerNotification.width * 1.5 * screenWidth/800, clickerNotification.height * 1.5 * screenHeight/600);
         }
     }
-}
+};
+
+function loadAction() {
+    screen = "load";
+    
+    var loadInterval = setInterval(function() {
+        if (loadStep == 5) {
+            clearInterval(loadInterval);
+        }
+        
+        if (loadCaptionCount == 5) {
+            loadStep += 1;
+        };
+    }, 1000);
+    
+};
+
+function playMusic() {
+    //actionSong.loop = true;
+    actionSong.play();
+    //actionSong.currentTime = actionSong.duration - 8;
+
+};
 
 
 //This function draws everything on the screen
@@ -1514,16 +1721,16 @@ function drawGame() {
     notifications();
     
     buttons.forEach(function(button) {
-        if (button.name == "pauseButton") {
+        if (button.name == "pauseButton" || (button.name == "muteButton" && mute == true) || (button.name == "volumeButton" && mute == false)) {
             button.draw();
         };
     });
     
     //Draw score
     //colorRect(screenWidth/10, screenHeight/10 - 30, 187, 30, 'white');
-    canvasContext.drawImage(wordBackground, screenWidth* 7.5/10, screenHeight*0.8/10, screenWidth*2.5/10, screenHeight*1/10);
+    canvasContext.drawImage(wordBackground, screenWidth* 0.5/10, screenHeight*0.8/10, screenWidth*2.5/10, screenHeight*1/10);
     //colorText("SCORE: " + score, screenWidth/10, screenHeight/10, 'black');
-    colorText("LIVES: " + lives, screenWidth*8.75/10, screenHeight*1.6/10, 'black');
+    colorText("LIVES: " + lives, screenWidth * 0.5/10 + screenWidth*2.5/10/2, screenHeight*1.6/10, 'black');
     canvasContext.drawImage(wordBackground, screenWidth*3.75/10, screenHeight*0.8/10, screenWidth*2.5/10, screenHeight*1/10);
     if (!openCurriculumMode) {
         colorText(gameTime, screenWidth/2, screenHeight*1.6/10, 'black');
@@ -1551,7 +1758,7 @@ function drawTitle() {
     canvasContext.drawImage(pressSpaceForInstructions, screenWidth/2 - (pressSpaceForInstructions.width*screenWidth/800)/2, screenHeight/2, pressSpaceForInstructions.width*screenWidth/800, pressSpaceForInstructions.height*screenHeight/600);*/
     
     menuButtons.forEach(function(button) {
-        if (button.name == "playButton" || button.name == "helpButton" || button.name == "moreButton" || (button.name == "openCurriculum" && openCurriculumUnlocked) || (button.name == "abc" && mode != "abc" && plmeMode == false) || (button.name == "snc" && mode != "snc" && plmeMode == false) || (button.name == "audit" && mode != "audit" && plmeMode == false)) {
+        if (button.name == "playButton" || button.name == "helpButton" || button.name == "moreButton" || (button.name == "openCurriculum" && openCurriculumUnlocked) || (button.name == "abc" && mode != "abc" && plmeMode == false) || (button.name == "snc" && mode != "snc" && plmeMode == false) || (button.name == "audit" && mode != "audit" && plmeMode == false) || (button.name == "muteButton" && mute == true) || (button.name == "volumeButton" && mute == false)) {
             button.draw();
         };
     });
@@ -1582,9 +1789,11 @@ function drawInstruction() {
         canvasContext.drawImage(josBackground, 0, 0, screenWidth, screenHeight);
     } else if (level == 2) {
         canvasContext.drawImage(rattyBackground, 0, 0, screenWidth, screenHeight);
-    } else {
+    } else if (level == 3) {
         canvasContext.drawImage(andrewsBackground, 0, 0, screenWidth, screenHeight);
-    }
+    } else if (level == 4) {
+        canvasContext.drawImage(bossBackground, 0, 0, screenWidth, screenHeight);
+    };
     
     //Decide which page of instructions to display
     if (screen == "instruction1") {
@@ -1606,6 +1815,8 @@ function drawInstruction() {
         } else if (button.name == "nextButton" && (screen == "instruction1" || screen == "instruction2")) {
             button.draw();
         } else if (button.name == "menuButton" && screen == "instruction1" && pause == true) {
+            button.draw();
+        } else if ((button.name == "muteButton" && mute == true) || (button.name == "volumeButton" && mute == false)) {
             button.draw();
         };
     });
@@ -1637,12 +1848,28 @@ function drawEnd() {
     //level = 1;
     //Draw Background
     //colorRect(0, 0, canvas.width, canvas.height, '#74FF48');
-    canvasContext.drawImage(winScreen, 0, 0, screenWidth, screenHeight);
     
-    //Calculate high score
-    if (score > highScore) {
+        //Calculate high score
+    if (openCurriculumMode && score > highScore) {
         highScore = score;
+    };
+    
+    if (!openCurriculumMode && lives > 0) {
+        canvasContext.drawImage(winScreen, 0, 0, screenWidth, screenHeight);
+    } else if (!openCurriculumMode && lives < 1) {
+        canvasContext.drawImage(loseScreen, 0, 0, screenWidth, screenHeight);
+    } else {
+        canvasContext.drawImage(openCurriculumEnd, 0, 0, screenWidth, screenHeight);
+        
+        canvasContext.drawImage(wordBackground, screenWidth*3.75/10, screenHeight*3/10, screenWidth*2.5/10, screenHeight*1/10);
+        colorText("SCORE: " + score, screenWidth/2, screenHeight*3.8/10, 'black');
+    
+        canvasContext.drawImage(wordBackground, screenWidth*3.75/10, screenHeight*4.5/10, screenWidth*2.5/10, screenHeight*1/10);
+        colorText("HIGH: " + highScore, screenWidth/2, screenHeight*5.3/10, 'black');
+
+
     }
+    
     
     //Draw Text
     /*colorText("Nice trash sorting", canvas.width/2, 100, 'black')
@@ -1654,7 +1881,7 @@ function drawEnd() {
     colorText("Click to Play Again", canvas.width/2, canvas.height*3/4, 'black');*/
     
     menuButtons.forEach(function(button) {
-        if (button.name == "menuButton" || button.name == "helpButton" || button.name == "playButton" || (button.name == "openCurriculum" && openCurriculumUnlocked)) {
+        if (button.name == "menuButton" || button.name == "helpButton" || button.name == "playButton" || (button.name == "openCurriculum" && openCurriculumUnlocked) || (button.name == "muteButton" && mute == true) || (button.name == "volumeButton" && mute == false)) {
             button.draw();
         };
     });
@@ -1662,9 +1889,38 @@ function drawEnd() {
 }
 
 
-function drawRoundOver() {
+/*function drawRoundOver() {
     colorText("Nice job. Click to continue", canvas.width/2, canvas.height/2, 'black');
-}
+}*/
+
+function drawLoad() {
+    frameTick += 1;
+    if (frameTick > 17) {
+        frameTick = 0;
+    };
+    
+    colorRect(0, 0, screenWidth, screenHeight, '#00cb00');
+    spriteUpdate(loading, 1, 3, (800 - loading.img.width/3)/2 * screenWidth/800, (600 - loading.img.height)/2 * screenHeight/600);
+    
+    if (loadCaptionCount == 5) {
+        if (loadStep == 0) {
+            canvasContext.drawImage(load1, (800 - load1.width)/2 * screenWidth/800, screenHeight*2/3, load1.width*screenWidth/800, load1.height*screenHeight/600);
+        } else if (loadStep == 1) {
+            canvasContext.drawImage(load2, (800 - load2.width)/2 * screenWidth/800, screenHeight*2/3, load2.width*screenWidth/800, load2.height*screenHeight/600);
+        } else if (loadStep == 2) {
+            canvasContext.drawImage(load3, (800 - load3.width)/2 * screenWidth/800, screenHeight*2/3, load3.width*screenWidth/800, load3.height*screenHeight/600);
+        } else if (loadStep == 3) {
+            canvasContext.drawImage(load4, (800 - load4.width)/2 * screenWidth/800, screenHeight*2/3, load4.width*screenWidth/800, load4.height*screenHeight/600);
+        } else if (loadStep == 4) {
+            canvasContext.drawImage(load5, (800 - load5.width)/2 * screenWidth/800, screenHeight*2/3, load5.width*screenWidth/800, load5.height*screenHeight/600);
+        } else if (loadStep == 5) {
+            if (loadCount >= 113) {
+                screen = "title";
+                playMusic();
+            };
+        };
+    }
+};
 
 
 </script>
