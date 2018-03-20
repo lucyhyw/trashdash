@@ -463,11 +463,9 @@ new Button("menuButton", 800 * 1/10, 600 * 7/10, function() {
             clearTimeout(wasteRepeat);
             clearTimeout(clickerTime);
             clearTimeout(mailTime);
-            console.log("clear waste");
             //actionSong.pause();
         };
         screen = "title";
-        console.log("menuButton");
     }
 }),
 
@@ -476,10 +474,8 @@ new Button("backButton", 800 * 1/10, 600 * 7/10, function() {
         //Go to title if on first page of instructions or go back one page if not when backButton pressed
         if (screen == "instruction1" && pause == false) {
             screen = "title";
-            console.log("backButton");
         } else if (screen == "instruction2") {
             screen = "instruction1";
-            console.log("back button");
         } else if (screen == "instruction3") {
             screen = "instruction2";
         }
@@ -513,7 +509,6 @@ new Button("playButton", 800/2 - 150/2, 600 * 7.5/10, function() {
 new Button("helpButton", 800 * 9/10 - 150, 600 * 7/10, function() {
     if(this.hover && (screen == "end" || screen == "title")) {
         screen = "instruction1";
-        console.log("help button");
     }
 }),
 
@@ -559,7 +554,6 @@ new Button("muteButton", 800 * 8/10, 600 * 9.4/10, function() {
         mute = false;
         playMusic();
         //mute = false;
-        console.log('unmute');
     };
 }),
 
@@ -568,7 +562,6 @@ new Button("volumeButton", 800 * 8/10, 600 * 9.4/10, function() {
         mute = true;
         actionSong.pause();
         //mute = true;
-        console.log('mute');
     }
 })];
 
@@ -725,7 +718,6 @@ window.onload = function() {
         loadCaptions[i].onload = function() {
             loadCount += 1;
             loadCaptionCount += 1;
-            console.log(loadCount);
         };
     };
 
@@ -736,7 +728,6 @@ window.onload = function() {
         
         waste.img.onload = function() {
             loadCount += 1;
-            console.log(loadCount);
         };
     });
     
@@ -744,14 +735,12 @@ window.onload = function() {
     
     present.img.onload = function() {
         loadCount += 1;
-        console.log(loadCount);
     };
     
     treeImg.src = "images/sprites/fakeTree.png";
     
     treeImg.onload = function() {
         loadCount += 1;
-        console.log(loadCount);
     };
         
    for (var i = 0; i < staticImages.length; i++) {
@@ -759,7 +748,6 @@ window.onload = function() {
         
         staticImages[i].onload = function() {
             loadCount += 1;
-            console.log(loadCount);
         };
     }
 
@@ -767,32 +755,27 @@ window.onload = function() {
     player.img.src = "images/sprites/runWilliam.png";
     player.img.onload = function() {
         loadCount += 1;
-        console.log(loadCount);
     };
     
     playerStatic.src = "images/sprites/williamClassic.png";
     playerStatic.onload = function() {
         loadCount += 1;
-        console.log(loadCount);
     };
     
     //boss sprites
     ripta.img.src = "images/sprites/ripta.png";
     ripta.img.onload = function() {
         loadCount += 1;
-        console.log(loadCount);
     };
     
     blueno.img.src = "images/sprites/blueno.png";
     blueno.img.onload = function() {
         loadCount += 1;
-        console.log(loadCount);
     };
     
     realTree.img.src = "images/sprites/realTree.png";
     realTree.img.onload = function() {
         loadCount += 1;
-        console.log(loadCount);
     };
     
 
@@ -802,7 +785,6 @@ window.onload = function() {
         
         menuButtons[i].img.onload = function() {
             loadCount += 1;
-            console.log(loadCount);
         };
     };
 
@@ -816,11 +798,9 @@ window.onload = function() {
         
         descriptiveButtons[i].img.onload = function() {
             loadCount += 1;
-            console.log(loadCount);
         };
         descriptiveButtons[i].description.onload = function() {
             loadCount += 1;
-            console.log(loadCount);
         };
     };
     
@@ -829,7 +809,6 @@ window.onload = function() {
         
         directionButtons[i].img.onload = function() {
             loadCount += 1;
-            console.log(loadCount);
         };
     };
     
@@ -837,7 +816,6 @@ window.onload = function() {
     cursor.img.src = "images/sprites/cursor.png";
     cursor.img.onload = function() {
         loadCount += 1;
-        console.log(loadCount);
     };
     
     
@@ -1090,7 +1068,6 @@ function animate() {
         wasteList.forEach(function(waste) {
             /*if (roundWon == true || (boss == true && bossBegin == false) || screen == "end") {
                 clearTimeout(wasteRepeat);
-                console.log("no waste");
             };*/
             waste.update();
             if(waste.hit() && waste.present == false) {
@@ -1121,7 +1098,6 @@ function animate() {
                     clearTimeout(wasteRepeat);
                     clearTimeout(clickerTime);
                     clearTimeout(mailTime);
-                    console.log("clear waste");
                     screen = "end";
                     //actionSong.pause();
                 };
@@ -1209,7 +1185,6 @@ function addWaste() {
 
         /*if (roundWon == true || (boss == true && bossBegin == false) || screen == "end") {
             clearTimeout(wasteRepeat);
-            console.log("no waste");
         } else {*/
             //Decide waste options according to the game level
             /*if (bossBegin == false) {
@@ -1294,7 +1269,6 @@ function timer(level) { //waste countDown
             wasteList = [];
             difficulty = startDifficulty;
             clearTimeout(wasteRepeat);
-            console.log("clear waste");
             return;
         } else if (pause == false) {
             clockTime(gameTime, 30);
@@ -1357,7 +1331,6 @@ function bossFight(level) {
         difficulty = startDifficulty;
         wasteList = [];
         clearTimeout(wasteRepeat);
-        console.log("clear waste");
         if (level == 3) {
             //actionSong.pause();
             openCurriculumUnlocked = true;
@@ -1433,7 +1406,6 @@ function pembrokePower(waste) {
             clearTimeout(wasteRepeat);
             clearTimeout(clickerTime);
             clearTimeout(mailTime);
-            console.log("clear waste");
             screen = "end";
             //actionSong.pause();
         };
@@ -1622,7 +1594,6 @@ function togglePause() {
     if (pause == false) {
         screen = "instruction1";
         pause = true;
-        console.log("toggling");
     } else {
         screen = "game";
         pause = false;
@@ -1914,7 +1885,7 @@ function drawLoad() {
         } else if (loadStep == 4) {
             canvasContext.drawImage(load5, (800 - load5.width)/2 * screenWidth/800, screenHeight*2/3, load5.width*screenWidth/800, load5.height*screenHeight/600);
         } else if (loadStep == 5) {
-            if (loadCount >= 113) {
+            if (loadCount >= 115) {
                 screen = "title";
                 playMusic();
             };
