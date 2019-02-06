@@ -1,5 +1,3 @@
-
-
 //-----------------------------------Global Variable Definition--------------------------------------\\
 
 
@@ -446,6 +444,7 @@ function newTrees(I) {
 
 
 // ** Waste Item Properties **
+//name: the name should match the sprite sheet file name
 //type: trash ('gray'), recycling ('blue'), or compost ('green')
 //currentFrame: Which frame of the sprite sheet should show
 //frames: Total number of frames in sprite sheet
@@ -585,6 +584,7 @@ wasteTypes.forEach(function(waste) {
     waste.img = document.createElement("img");
 });
 
+
 //Create present image to use in Blueno Boss
 present = {
     img: document.createElement("img"),
@@ -593,18 +593,37 @@ present = {
 };
 
 
-//Direction Buttons
-var directionButtons = [
-new directionButton(65, 800/2 - 52*1.5 - (30*1.5)/2, 600*7.7/10 + 52*1.5), //A
-new directionButton(68, 800/2 + 30*1.5 - (30*1.5)/2, 600*7.7/10 + 52*1.5), //D
-new directionButton(87, 800/2 - (30*1.5)/2, 600*7.7/10)]; //W
+//Create lists of available waste items for each level
+let places = [];
+for (let j = 0; j < 5; j++) {
+    places[j] = [];
+    for (let i = 0; i < wasteTypes.length; i++) {
+        if (wasteTypes[i].place.indexOf(j) >= 0) {
+            places[j].push(wasteTypes[i]);
+        }
+    };
+};
 
 
-//Menu Buttons
-var menuButtons = [
+//** Game-play Direction Buttons **
+//All direction buttons should go in this array
+let directionButtons = [
+//A Direction (Compost)
+new directionButton(65, 800/2 - 52*1.5 - (30*1.5)/2, 600*7.7/10 + 52*1.5),
+//D Direction (Trash)
+new directionButton(68, 800/2 + 30*1.5 - (30*1.5)/2, 600*7.7/10 + 52*1.5),
+//W Direction (Recycling)
+new directionButton(87, 800/2 - (30*1.5)/2, 600*7.7/10)];
+
+
+// ** Menu Buttons **
+//All menu buttons should go in this array
+let menuButtons = [
+//More Button takes the player to Brown Sustainability homepage
 new Button("moreButton", 800 * 1/10, 600 * 7/10, function() {
     if (this.hover && screen == "title") {
         window.open("https://www.brown.edu/initiatives/brown-is-green/home");
+        //After 10 clicks in one play session, activates plmeMode Easter Egg
         plmeCount += 1;
         if (plmeCount >= 10) {
             plmeMode = true;
@@ -613,19 +632,14 @@ new Button("moreButton", 800 * 1/10, 600 * 7/10, function() {
         };
     };
 }),
-
+//Menu Button takes player back to title page
 new Button("menuButton", 800 * 1/10, 600 * 7/10, function() {
     if (this.hover && (screen == "end" || (screen == "instruction1" && pause == true))) {
         if (pause == true) {
             pause = false;
-            //clearInterval(progress);
             wasteList = [];
             difficulty = 1.5;
-            //clearTimeout(wasteRepeat);
-            //clearTimeout(clickerTime);
-            //clearTimeout(mailTime);
-            //mailTime = null;
-            //actionSong.pause();
+            //Clears progress time, morningMail powerup time, iClicker powerup time, addWaste repeat
             clearAllTimeouts();
         };
         
@@ -633,77 +647,82 @@ new Button("menuButton", 800 * 1/10, 600 * 7/10, function() {
         screen = "title";
     }
 }),
-
+//Back button returns to the previous page of instructions (or title page if on First instruction page)
 new Button("backButton", 800 * 1/10, 600 * 7/10, function() {
     if (this.hover) {
-        //Go to title if on first page of instructions or go back one page if not when backButton pressed
+        //Go to title if on first page of instructions
         if (screen == "instruction1" && pause == false) {
             screen = "title";
-        } else if (screen == "instruction2") {
+        } else if (screen == "instruction2") { //Go to instruction page 1 from page 2
             screen = "instruction1";
-        } else if (screen == "instruction3") {
+        } else if (screen == "instruction3") { //Go to instruction page 2 from page 3
             screen = "instruction2";
         }
     }
 }),
-
+//Next button goes to next instruction page
 new Button("nextButton", 800 * 9/10 - 150, 600 * 7/10, function() {
     if(this.hover) {
-        //Go to the next page unless you are on the last page
-        if (screen == "instruction1") {
+        if (screen == "instruction1") { //Page 1 goes to page 2
             screen = "instruction2";
-        } else if (screen == "instruction2") {
+        } else if (screen == "instruction2") { //Page 2 goes to page 3
             screen = "instruction3";
+            //If accessed from the title page, accessing last page of instructions bypasses tutorial
             if (!pause) {
               needsTutorial = false;
             }
         };
     };
 }),
+//Play Button plays regular game mode
 new Button("playButton", 800/2 - 150/2, 600 * 7.5/10, function() {
     if (this.hover) {
+        //Deactivate BiG Easter Egg
         bigClicked = false;
-        console.log(loadCount);
         //Start game when playButton pressed
         if (pause == false) {
             openCurriculumMode = false;
             fadeTo('actionSong');
+            //Start regular game if no tutorial needed, otherwise start the tutorial
             if (!needsTutorial) {
               newGame();
             } else {
               startTutorial();
             }
+        //Exit pause screen if pressed while game is paused
         } else {
             togglePause();
         };
         this.hover = false;
     }
 }),
-
-
+//Help Button enters instructions
 new Button("helpButton", 800 * 9/10 - 150, 600 * 7/10, function() {
     if(this.hover && (screen == "end" || screen == "title")) {
+        //Deactivates BiG Easter Egg
         bigClicked = false;
         screen = "instruction1";
     }
 }),
-
+//Open Curriculum Button starts Open Curriculum Mode
 new Button("openCurriculum", 800/2 - 150/2, 600 * 6/10, function() {
+    //Only works if openCurriculum mode is unlocked (by completing the regular game)
     if (this.hover && openCurriculumUnlocked == true) {
         openCurriculumMode = true;
         fadeTo('actionSong');
         newGame();
     };
 }),
-
+//abc button changes difficulty to abc mode (most difficult)
 new Button("abc", (400 - 24) - (50 + 37), 600 * 9.4/10, function() {
     if(this.hover && screen == "title" && plmeMode == false) {
         mode = "abc";
+        //startDifficulty determines waste speed
         startDifficulty = 1.7;
         startLives = 3;
     }
 }),
-
+//snc button changes difficulty to snc mode (medium difficulty)
 new Button("snc", 400 - 24, 600 * 9.4/10, function() {
     if (this.hover && screen == "title" && plmeMode == false) {
         mode = "snc";
@@ -711,41 +730,40 @@ new Button("snc", 400 - 24, 600 * 9.4/10, function() {
         startLives = 10;
     }
 }),
-
+//audit changes difficulty to audit mode (low difficulty)
 new Button("audit", (400 + 24) + 50, 600 * 9.4/10, function() {
     if (this.hover && screen == "title" && plmeMode == false) {
         mode = "audit";
         startDifficulty = 1;
+        //Player will still lose/gain lives but they cannot lose (lives can be negative)
         startLives = 0;
     };
 }),
-
+//Pause button pauses game and brings player to an in-game instruction screen
 new Button("pauseButton", 800 * 6.9/10, 600 * 9.4/10 + 6, function() {
     if (this.hover && screen == "game") {
         togglePause();
     };
 }),
-
-new Button("muteButton", 800 * 8/10, 600 * 9.4/10, function() {
+//Clicking the volume button unmutes the game
+new Button("volumeButton", 800 * 8/10, 600 * 9.4/10, function() {
     if (this.hover && mute == true) {
         mute = false;
-        
         musicPlayer.play();
     };
 }),
-
-new Button("volumeButton", 800 * 8/10, 600 * 9.4/10, function() {
+//Clicking the mute button mutes the game
+new Button("muteButton", 800 * 8/10, 600 * 9.4/10, function() {
     if (this.hover && mute == false) {
-        mute = true;
-        //actionSong.pause();
         mute = true;
         musicPlayer.pause();
     }
 })];
 
 
-//Descriptive Buttons
-var descriptiveButtons = [
+// ** Descriptive Buttons **
+//Determines location of all descriptive buttons and their corresponding descriptions
+let descriptiveButtons = [
 new descriptiveButton("chips", 275, 320, 400 - 534/2, 0),
 new descriptiveButton("coldCup", 275, 175, 400 - 534/2, 600*4.1/10 + 40),
 new descriptiveButton("glassBottle", 370, 175, 400 - 534/2, 600*4.1/10 + 40),
@@ -762,18 +780,20 @@ new descriptiveButton("tea", 470, 250, 400 - 534/2, 600 - 271),
 new descriptiveButton("bones", 540, 265, 400 - 534/2, 600 - 271),
 new descriptiveButton("chopSticks", 630, 265, 400 - 534/2, 600 - 271)];
 
-var buttons = menuButtons.concat(descriptiveButtons);
+//Add descriptive buttons and menu buttons to buttons array
+let buttons = menuButtons.concat(descriptiveButtons);
 
 
 
-//Cursor properties
+// ** Cursor Properties **
 //hover: is the mouse hovering over a button
-var cursor = {
+let cursor = {
     img: document.createElement("img"),
     hover: false
 };
 
-var realTree = {
+// ** Rock Tree Boss **
+let realTree = {
     img: document.createElement("img"),
     x: screenWidth*9/12,
     y: screenHeight*3/10,
@@ -781,13 +801,18 @@ var realTree = {
     height: 208,
     currentFrame: 1,
     frames: 4,
+    //Tree Tap is how many times the rock tree has been clicked without causing damage
     treeTap: 0,
+    //TreesHit is how many times the rock tree has been dealt damage
     treesHit: 0,
     
+    //** Sound Effects **
     tapSound: new Audio('music/tap.wav'),
     hitSound: new Audio('music/special.wav'),
- 
+    
+    //Rock Tree is immune to clicks briefly after being clicked (when noHit == true)
     noHit: false,
+    //betweenHits timeout makes rock tree immune for the timout duration
     betweenHits: function() {
         if (realTree.noHit == false) {
             realTree.noHit = true;
@@ -799,19 +824,26 @@ var realTree = {
         };        
     },
     
+    //Rock tree draw function
     draw: function() {
-        if (realTree.noHit == false) {
+        if (realTree.noHit == false) { //Regular rock tree sprite
             treeUpdate(realTree, 1, this.x, this.y);
-        } else if (realTree.noHit == true) {
+        } else if (realTree.noHit == true) { //Immune rock tree sprite
             treeUpdate(realTree, 3, this.x, this.y);
         };
     }
 };
 
+//Change volume of the rock tree sound effects
 realTree.tapSound.volume = 0.8;
 realTree.hitSound.volume = 0.8;
 
-var ripta = {
+//treeImg stores images of the fake trees
+let treeImg = document.createElement("img");
+
+
+// ** Ripta Boss **
+let ripta = {
     img: document.createElement("img"),
     currentFrame: 1,
     frames: 2,
@@ -819,7 +851,9 @@ var ripta = {
     y: screenHeight*5/10
 };
 
-var blueno = {
+
+// ** Blueno Boss **
+let blueno = {
     img: document.createElement("img"),
     currentFrame: 1,
     frames: 2,
@@ -827,9 +861,9 @@ var blueno = {
     y: screenHeight*3/10
 };
 
-var treeImg = document.createElement("img");
 
-var loading = {
+// ** Loading Animation **
+let loading = {
     img: document.createElement("img"),
     x: screenWidth/2,
     y: screenHeight/2,
@@ -837,6 +871,8 @@ var loading = {
     currentFrame: 1
 };
 
+
+// ** BiG Easter Egg Sprite **
 var bigSprite = {
   img: document.createElement("img"),
   x: screenWidth*5/800,
@@ -846,33 +882,25 @@ var bigSprite = {
 }
 
 
-//Create Waste lists for each level
-var places = [];
-for (var j = 0; j < 5; j++) {
-    places[j] = [];
-    for (var i = 0; i < wasteTypes.length; i++) {
-        if (wasteTypes[i].place.indexOf(j) >= 0) {
-            places[j].push(wasteTypes[i]);
-        }
-    };
-};
 
 
 
 //---------------------------------------Load images/music-----------------------------------\\
 //When the window loads
 window.onload = function() {
-    //Load canvas
-    //canvas = document.getElementById('gameCanvas');
-    //canvasContext = canvas.getContext('2d');
+    //Load canvas, canvasContext, and determine resize properties
     setup();
     
+    // ** Load screen images **
+    //First load loading screen animation
     loading.img.src = "images/sprites/loading.png";
     loading.img.onload = function() {
+        //Start load process / screen
         loadAction();
     };
     
-    for (var i = 0; i < loadCaptions.length; i++) {
+    //Go through all loading screen captions and load their images
+    for (let i = 0; i < loadCaptions.length; i++) {
         loadCaptions[i].src = "images/staticImages/loading/" + loadCaptionsText[i] + ".png";
 
         loadCaptions[i].onload = function() {
@@ -882,7 +910,7 @@ window.onload = function() {
     };
 
     
-    
+    // ** Load waste item sprites **
     wasteTypes.forEach(function(waste) {
         waste.img.src = "images/sprites/" + waste.name + ".png";
         
@@ -890,19 +918,15 @@ window.onload = function() {
             loadCount += 1;
         };
     });
-    
+    //Load present image
     present.img.src = "images/sprites/present.png";
     
     present.img.onload = function() {
         loadCount += 1;
     };
     
-    treeImg.src = "images/sprites/fakeTree.png";
     
-    treeImg.onload = function() {
-        loadCount += 1;
-    };
-        
+    // ** Load all static Images **
    for (var i = 0; i < staticImages.length; i++) {
         staticImages[i].src = "images/staticImages/" + staticImageText[i] + ".png";
         
@@ -911,49 +935,64 @@ window.onload = function() {
         };
     }
 
-    //Load player sprite
+    // ** Load player sprite **
     player.img.src = "images/sprites/runWilliam.png";
     player.img.onload = function() {
         loadCount += 1;
     };
     
+    //Load static image of the player for between-round pages
     playerStatic.src = "images/sprites/williamClassic.png";
     playerStatic.onload = function() {
         loadCount += 1;
     };
     
-    //boss sprites
+    
+    // ** Boss Sprites **
+    //Load ripta image
     ripta.img.src = "images/sprites/ripta.png";
     ripta.img.onload = function() {
         loadCount += 1;
     };
     
+    //Load Blueno Image
     blueno.img.src = "images/sprites/blueno.png";
     blueno.img.onload = function() {
         loadCount += 1;
     };
     
+    //Load rocktree image
     realTree.img.src = "images/sprites/realTree.png";
     realTree.img.onload = function() {
         loadCount += 1;
     };
     
+    //Load fake tree image
+    treeImg.src = "images/sprites/fakeTree.png";
+    treeImg.onload = function() {
+        loadCount += 1;
+    };
+    
+    
+    // ** Load BiG Easter Egg **
     bigSprite.img.src = "images/sprites/bigSprite.png";
     bigSprite.img.onload - function() {
       loadCount += 1;
     };
     
 
-    //Load button sprites
-    for (var i = 0; i < menuButtons.length; i++) {
+    // ** Load Button Sprites **
+    //Load menu buttons
+    for (let i = 0; i < menuButtons.length; i++) {
         menuButtons[i].img.src = "images/buttons/" + ["moreButton", "menuButton", "backButton", "nextButton", "playButton", "helpButton", "openCurriculum", "abc", "snc", "audit", "pauseButton", "muteButton", "volumeButton"][i] + ".png";
         
         menuButtons[i].img.onload = function() {
             loadCount += 1;
         };
     };
-
-    for (var i = 0; i < descriptiveButtons.length; i++) {
+    
+    //Load descriptive buttons
+    for (let i = 0; i < descriptiveButtons.length; i++) {
         
         descriptiveButtons[i].img.src = "images/buttons/" + descriptiveButtons[i].name + "Button.png";
         descriptiveButtons[i].description.src = "images/staticImages/" + descriptiveButtons[i].name + "Description.png";
@@ -966,7 +1005,8 @@ window.onload = function() {
         };
     };
     
-    for (var i = 0; i < directionButtons.length; i++) {
+    //Load direction buttons
+    for (let i = 0; i < directionButtons.length; i++) {
         directionButtons[i].img.src = "images/buttons/" + ["aDirection", "dDirection",/* "sDirection",*/ "wDirection"][i] + ".png";
         
         directionButtons[i].img.onload = function() {
@@ -974,396 +1014,524 @@ window.onload = function() {
         };
     };
     
-    //Load cursor sprites
+    // ** Load cursor sprites **
     cursor.img.src = "images/sprites/cursor.png";
     cursor.img.onload = function() {
         loadCount += 1;
     };
-
+    
+    
+    //Events handles all key-press events
     events();
+    //Animate updates the game
     animate();
 };
 
 
-//-------------------------------------------Event listeners------------------------------------\\
-function events() {
-    //For all key-press events
-    document.addEventListener('keydown', function(evt) {
 
-        if (screen == "game") {
-            //Change player.type based on the key pressed
-            if (colorChange == false) {
-                player.shirtColor(evt.keyCode);
-            };
-            
-            if (evt.keyCode == 32) {
-                if (roundWon == true && level < 3) {
-                    roundWon = false;
-                    level ++;
-                    fadeTo('actionSong');
-                    firstWaste = true;
-                    addWaste();
-                    timer(level);
-                } else if (boss == true && bossBegin == false) {
-                    bossBegin = true;
-                    firstWaste = true;
-                    addWaste();
-                    if (level == 3) {
-                        treeHit();
-                    };
-                } else if (needsTutorial) {
-                  changeTutorialPageOnSpace();
-                }
-            };
-            
-            if (level == 2 && boss == true && (evt.keyCode == 37 || evt.keyCode == 39)) {
-              riptaTitle = true;
-            }
-        }
-    })
-    
-    
+
+
+//-------------------------------------------Event listeners------------------------------------\\
+const events = () => {
+    //For all key-press events
+    handleKeyPresses(); 
     
     //For all mouse-move events
-    canvas.addEventListener('mousemove', function (evt) {
-        //Move cursor to mouse position
-        var mousePos = calculateMousePos(evt);
-        cursor.x = mousePos.x;
-        cursor.y = mousePos.y;
-        
-        //See if the mouse is hovering over the buttons
-            buttons.forEach(function(button) {
-                button.mouseOver(mousePos.x, mousePos.y);
-            });
-            
-            descriptiveButtons.forEach(function(button) {
-                button.action();
-            });
-            
-        if (level == 3 && cursor.x > 94*screenWidth/800 && cursor.x < 163*screenWidth/800 && cursor.y > 49*screenHeight/600 && cursor.y < 141*screenHeight/600) {
-          rattyVersion = 1;
-        } else if (level == 3 && cursor.x > 539*screenWidth/800 && cursor.x < 574*screenWidth/800 && cursor.y > 99*screenHeight/600 && cursor.y < 134*screenHeight/600) {
-          rattyVersion = 2;
-        } else {
-          rattyVersion = 0;
-        }
-    })
+    handleMouseMove(); 
     
-    //Mouse up events
-    canvas.addEventListener('mouseup', function(evt) {
-        for (var i = 0; i < menuButtons.length; i ++) {
-            if (!musicPlayer.paused && menuButtons[i].name == "volumeButton") {
-                menuButtons[i].action();
-                break;
-            } else if (musicPlayer.paused && menuButtons[i].name == "muteButton") {
-                menuButtons[i].action();
-                break;
-            };
-        };
-    });
-    
+    //For all mouse-up events
+    handleMouseUp();  
     
     //For all mouse-click events
-    canvas.addEventListener('click', function (evt) {
-        if (screen == "game") {
-            var mousePos = calculateMousePos(evt);
-            
-            buttons.forEach(function(button) {
-                if (button.name == "pauseButton") {
-                    button.action();
-                };
-            });
-            
-
-            //Go through wasteList to see if a coldCup is being pressed
-            wasteList.forEach(function(waste) {
-                if(waste.name == 'coldCup' && !waste.present && waste.type == 'none') {
-                    if(click(mousePos.x, mousePos.y, waste)) {
-                        waste.tap.play();
-                        waste.currentFrame = 3;
-                        waste.type = 'blue';
-                    }
-                } else if (waste.name == 'iClicker') {
-                    if(click(mousePos.x, mousePos.y, waste)) {
-                        waste.special.play();
-                        clickerPower();
-                        
-                        if (needsTutorial) {
-                          tutorialWasteClick();
-                        }
-                        
-                        waste.active = false;
-                    };
-                } else if (waste.name == 'smoothie') {
-                    if(click(mousePos.x, mousePos.y, waste) && waste.type != 'blue') {
-                        waste.special.play();
-                        lives += 1;
-                        waste.type = 'blue';
-                        waste.currentFrame = 3;
-                    };
-                } else if (waste.name == 'morningMail') {
-                    if(click(mousePos.x, mousePos.y, waste)) {
-                        waste.special.play();
-                        mailPower();
-                        
-                        if (needsTutorial) {
-                          tutorialWasteClick();
-                        }
-                        waste.active = false;
-                    }
-                }
-                
-                if (startClick > 0 && click(mousePos.x, mousePos.y, waste) && (waste.type == 'blue' || waste.type == 'gray' || waste.type == 'green')) {
-                    waste.correct.play();
-                    
-                    if (needsTutorial) {
-                      clearAllTimeouts();
-                      tutorialPage ++;
-                    }
-                    
-                    if(openCurriculumMode) {
-                        if (mode == "abc") {
-                            score += 2;
-                            difficulty += 0.1;
-                        } else if (mode == "snc") {
-                            score += 1;
-                            difficulty += 0.07;
-                        } else if (mode == "audit") {
-                            difficulty += 0.05;
-                        };
-                    };
-                    waste.active = false;
-                };
-            })
-
-            if (bossBegin == true && level == 1) {
-                wasteList.forEach(function(waste) {
-                    if(mousePos.x >= waste.xRatio*screenWidth && mousePos.x <= waste.xRatio*screenWidth + present.width*screenWidth/800 && mousePos.y >= waste.yRatio*screenHeight && mousePos.y <= waste.yRatio*screenHeight + present.height*screenHeight/600) {
-                        if(waste.present == true) {
-                            waste.tap.play();
-                            waste.present = false;
-                        };
-                    };
-                })
-            } else if (bossBegin == true && level == 3) {
-                if(mousePos.x > realTree.x + realTree.treeTap * 114/10 /2 * screenWidth/800 && mousePos.x < realTree.x + realTree.treeTap * 114/10 /2 * screenWidth/800 + realTree.width && mousePos.y > realTree.y + realTree.treeTap * 208/10 * screenHeight/600 && mousePos.y < realTree.y + realTree.treeTap * 208/10 + realTree.height && realTree.noHit == false) {
-                    if (realTree.treeTap >= 3) {
-                        
-                        realTree.hitSound.play();
-                        
-                        bossLife -= 10;
-                        realTree.height = 208;
-                        realTree.width = 114;
-                        realTree.treeTap = 0;
-                        treeHit();
-                    } else {
-                        realTree.betweenHits();
-                        
-                        realTree.tapSound.play();
-                        
-                        realTree.treeTap += 1;
-                        realTree.height = realTree.height - 208/10;
-                        realTree.width = realTree.width - 114/10;
-                    };
-                } else {
-                }
-            };
-            
-        } else if (screen != "game") {
-          var mousePos = calculateMousePos(evt);
-          if (screen == "end" && lives > 0 && mousePos.x > 31 && mousePos.x < 43*screenWidth/800 && mousePos.y > 258*screenHeight/600 && mousePos.y < 267*screenHeight/600) {
-            williamWasHere = !williamWasHere;
-          } else if (screen == "title" && mousePos.x > screenWidth * 5/800 && mousePos.x < screenWidth*5/800 + bigLogo.width*screenWidth/800 && mousePos.y > screenHeight * 495/600 && mousePos.y < screenHeight * 495/600 + bigLogo.height*screenHeight/600) {
-            bigClicked = true;
-          }
-            //Handle button presses
-            buttons.forEach(function(button) {
-                if (button.name == "muteButton") {
-                    if (mute == true) {
-                        //button.action();
-                    }
-                } else if(button.name == "volumeButton") {
-                    if (mute == false) {
-                        //button.action();
-                    };
-                } else {
-                    button.action();
-                }
-            });
-
-        }
-    });
+    handleMouseClick();
     
-    window.addEventListener("resize", () => {
-      resizeScreen();
-    });
-    
-    musicPlayer.addEventListener('timeupdate', function(){
-                const buffer = 0.36;
-                if(this.currentTime > this.duration - buffer){
-                    this.currentTime = 0
-                    this.play()
-                }});
+    //Handles resize events
+    handleResize();
+
+    //Loops background music
+    musicLoop();
 };
 
 
 
-//------------------------------------------------Animate----------------------------------\\
-function animate() {
-    //Call this function repeatedly
-    requestAnimationFrame(animate);
-        
-    //Dynamically scale the screen proportionally
-    //resizeScreen();
-    //Resize canvas
-    canvasContext.canvas.width = screenWidth;
-    canvasContext.canvas.height = screenHeight;
+
+//Handles all key presses
+const handleKeyPresses = () => {
+  document.addEventListener('keydown', evt => {
     
+    if (screen == "game") {
+      //If space bar pressed
+      if (evt.keyCode == 32) {
+        //If between levels, start the next level
+        if (roundWon == true && level < 3) {
+          roundWon = false;
+          level ++;
+          fadeTo('actionSong');
+          timer(level);
+          startAddWaste();
+        //If on boss introduction screen, start the boss fight
+        } else if (boss == true && bossBegin == false) {
+            bossBegin = true;
+            startAddWaste();
+            //First treeHit() event puts rock tree in a random location
+            if (level == 3) {
+                treeHit();
+            };
+        //If on tutorial
+        } else if (needsTutorial) {
+          changeTutorialPageOnSpace();
+        }
+      //If key press other than space, change player type accordingly
+      } else if (colorChange == false) {
+        player.shirtColor(evt.keyCode);
+      }
+      
+      //Ripta Easter Egg
+      if (level == 2 && boss == true && (evt.keyCode == 37 || evt.keyCode == 39)) {
+        riptaTitle = true;
+      }
+    }
+  })
+}
+
+
+//Handle all space presses during tutorial
+const changeTutorialPageOnSpace = () => {
+  //Add chips after tutorial page 3 intro
+  if (tutorialPage == 3 && wasteList.length == 0) {
+    addSingleWaste("chips");
+  //Add coldCup after tutorial page 4 intro
+  } else if (tutorialPage == 4 && wasteList.length == 0) {
+    addSingleWaste("coldCup");
+  //Add a random waste after tutorial pages 5 and 6 intro
+  } else if ((tutorialPage == 5 || tutorialPage == 6) && wasteList.length == 0) {
+    let newWaste = wasteTypes[Math.floor(Math.random()*(wasteTypes.length - 4))];
+    addSingleWaste(newWaste.name);
+  //Add smoothie after tutorial page 7 intro
+  } else if (tutorialPage == 7 && wasteList.length == 0) {
+    addSingleWaste("smoothie");
+  //Add pembroke seal after tutorial page 8 intro
+  } else if (tutorialPage == 8 && wasteList.length == 0) {
+    addSingleWaste("pembroke");
+  //End the tutorial after tutorial page 10 intro
+  } else if (tutorialPage == 10) {
+    endTutorial();
+  //Go to next tutorial page for all pages that don't involve gameplay
+  } else if (tutorialPage == 0 || tutorialPage == 1 || tutorialPage == 2 || tutorialPage == 9) {
+    tutorialPage ++;
+  }
+}
+
+
+//Handles all mouse move events
+const handleMouseMove = () => {
+  canvas.addEventListener('mousemove', evt => {
+    //Move cursor to mouse position
+    let mousePos = calculateMousePos(evt);
+    cursor.x = mousePos.x;
+    cursor.y = mousePos.y;
+
+    //See if the mouse is hovering over the buttons
+    buttons.forEach(function(button) {
+      button.mouseOver(mousePos.x, mousePos.y);
+    });
     
-    if (screen == "game" && pause == false) {
-        wasteList.forEach(function(waste) {
+    //If mouse hovering over descriptive buttons, show their description
+    descriptiveButtons.forEach(function(button) {
+      button.action();
+    });
+    
+    //Ratty Easter Egg
+    if (level == 3 && cursor.x > 94*screenWidth/800 && cursor.x < 163*screenWidth/800 && cursor.y > 49*screenHeight/600 && cursor.y < 141*screenHeight/600) {
+      rattyVersion = 1; //Show "Ratty"
+    } else if (level == 3 && cursor.x > 539*screenWidth/800 && cursor.x < 574*screenWidth/800 && cursor.y > 99*screenHeight/600 && cursor.y < 134*screenHeight/600) {
+      rattyVersion = 2; //Show "Rodent"
+    } else {
+      rattyVersion = 0; //Show "Sharpe" (Default)
+    }
+  })
+}
 
-            waste.update();
-            if(waste.hit() && waste.present == false) {
-                if (!(wasteList.length - 1 > 0 && tutorialPage == 5) && !(tutorialPage == 6)) {
-                  waste.correct.play();
-                };
 
-                if(openCurriculumMode) {
-                    if (mode == "abc") {
-                        score += 2;
-                        difficulty += 0.1;
-                    } else if (mode == "snc") {
-                        score += 1;
-                        difficulty += 0.07;
-                    } else if (mode == "audit") {
-                        difficulty += 0.05;
-                    };
-                } else if (bossBegin == true && (level == 1 || level == 2)) {
-                    bossLife -= 10;
-                } else if (needsTutorial) {
-                  tutorialWasteHit(waste);
-                }
-            } else if (!waste.inBounds() && needsTutorial) {
-                tutorialWasteMiss(waste);
-            }// else if (waste.type != 'powerUp' && waste.type != 'powerDown' && needsTutorial && waste.xRatio > 0.8 && waste.xRatio < 0.85 && wasteList.length == 1) {
-              else if (waste.type != 'powerUp' && waste.type != 'powerDown' && needsTutorial && waste.xRatio <= (1 - 80 * waste.speed/screenWidth * screenWidth/800) && waste.xRatio >= (1 - 81 * waste.speed/screenWidth * screenWidth/800) && wasteList.length == 1) {
-              if (tutorialPage == 5) {
-                addSingleWaste("morningMail");
-              } else if (tutorialPage == 6) {
-                addSingleWaste("iClicker");
-              }
-            } else if(!waste.inBounds() && waste.type != 'powerUp' && waste.type != 'powerDown') {
-                waste.miss.play();
-                lives -= 1;
-                if(lives <= 0 && mode != "audit") {
-                    //End game when all lives gone
-                    //clearInterval(progress);
-                    wasteList = [];
-                    //difficulty = startDifficulty;
-                    //clearTimeout(wasteRepeat);
-                    //clearTimeout(clickerTime);
-                    //clearTimeout(mailTime);
-                    //mailTime = null;
-                    clearAllTimeouts();
-                    fadeTo('winSong');
-                    screen = "end";
-                };
-            } else if (waste.name == 'pembroke') {
-                pembrokePower(waste);
-            };
-        })
-        /*
-        wasteList.forEach(function(waste) {
-            if (!waste.active) {
-            };
-        });*/
-        
-        wasteList = wasteList.filter(function(waste) {
-            return waste.active;
-        });
-
-        
-        //Draw all images on current screens
-        drawGame();
-    } else if (screen == "title") {
-        drawTitle();
-    } else if (screen == "instruction1" || screen == "instruction2" || screen == "instruction3") {
-        drawInstruction();
-    } else if (screen == "end") {
-        drawEnd();
-    } else if (screen == "roundOver") {
-        drawRoundOver();
-    } else if (screen == "load") {
-        drawLoad();
+//Handles all mouse up events
+const handleMouseUp = () => {
+  canvas.addEventListener('mouseup', evt => {
+    //Go through all menu buttons to find volumeButton and muteButton
+    for (let i = 0; i < menuButtons.length; i ++) {
+      //If the music is not paused, and mouse is hovering over volume/mute button, start music
+      if (!musicPlayer.paused && menuButtons[i].name == "muteButton") {
+        menuButtons[i].action();
+        break;
+      //If music is paused, and mouse is hovering over volume/mute button, pause music
+      } else if (musicPlayer.paused && menuButtons[i].name == "volumeButton") {
+          menuButtons[i].action();
+          break;
+      };
     };
+  });
+}
+
+
+//Handle Mouse Click Events
+const handleMouseClick = () => {
+  canvas.addEventListener('click', evt => {
+    //Calculate mouse position
+    let mousePos = calculateMousePos(evt);
     
+    if (screen == "game") {
+            
+      //Pause game if pause button pressed      
+      buttons.forEach(function(button) {
+        if (button.name == "pauseButton") {
+            button.action();
+        };
+      });
+            
+
+      //Go through wasteList to check which waste is being clicked and react accordingly
+      wasteList.forEach(waste => {
+        //If coldCup without lid clicked, add lid and allow it to be recycled
+        if(waste.name == 'coldCup' && !waste.present && waste.type == 'none') {
+          if(click(mousePos.x, mousePos.y, waste)) {
+            waste.tap.play();
+            waste.currentFrame = 3;
+            waste.type = 'blue';
+          }
+        //If iClicker clicked, start Clicker Power
+        } else if (waste.name == 'iClicker') {
+          if(click(mousePos.x, mousePos.y, waste)) {
+            waste.special.play();
+            clickerPower();
+
+            //Only move on in tutorial if iClicker is clicked before sorting the other waste
+            if (needsTutorial) {
+              tutorialWasteClick();
+            }
+
+            //Remove iClicker after clicking it
+            waste.active = false;
+          };
+        //If smoothie clicked, add a life and turn it into a recyclable cup
+        } else if (waste.name == 'smoothie') {
+          if(click(mousePos.x, mousePos.y, waste) && waste.type != 'blue') {
+            waste.special.play();
+            lives += 1;
+            waste.type = 'blue';
+            waste.currentFrame = 3;
+          };
+        //If morning mail clicked, start morning mail power
+        } else if (waste.name == 'morningMail') {
+          if(click(mousePos.x, mousePos.y, waste)) {
+            waste.special.play();
+            mailPower();
+
+            //Only move on in tutorial if morning mail is clicked before sorting other waste
+            if (needsTutorial) {
+              tutorialWasteClick();
+            }
+
+            //Remove morning mail after clicking it
+            waste.active = false;
+          }
+        }
+
+        //If a waste item is clicked while clickerPower is active, sort it
+        if (startClick > 0 && click(mousePos.x, mousePos.y, waste) && (waste.type == 'blue' || waste.type == 'gray' || waste.type == 'green')) {
+          waste.correct.play();
+
+          //Move on to next tutorial page
+          if (needsTutorial) {
+            clearAllTimeouts();
+            tutorialPage ++;
+          }
+
+          //Add points and difficulty accordingly in open curriculum mode
+          if(openCurriculumMode) {
+            if (mode == "abc") {
+              score += 2;
+              difficulty += 0.1;
+            } else if (mode == "snc") {
+              score += 1;
+              difficulty += 0.07;
+            } else if (mode == "audit") {
+              difficulty += 0.05;
+            };
+          };
+          //Remove the waste from play
+          waste.active = false;
+        };
+        
+        //If on Blueno boss fight, click to remove presents
+        if (bossBegin == true && level == 1) {
+          if(mousePos.x >= waste.xRatio*screenWidth && mousePos.x <= waste.xRatio*screenWidth + present.width*screenWidth/800 && mousePos.y >= waste.yRatio*screenHeight && mousePos.y <= waste.yRatio*screenHeight + present.height*screenHeight/600 && waste.present == true) {
+            waste.tap.play();
+            waste.present = false;
+          };
+        };
+      })
+      
+      
+      // ** Rock Tree Boss Fight **
+      
+      //If Rock Tree clicked and not immune
+      if (bossBegin == true && level == 3 && mousePos.x > realTree.x + realTree.treeTap * 114/10 /2 * screenWidth/800 && mousePos.x < realTree.x + realTree.treeTap * 114/10 /2 * screenWidth/800 + realTree.width && mousePos.y > realTree.y + realTree.treeTap * 208/10 * screenHeight/600 && mousePos.y < realTree.y + realTree.treeTap * 208/10 + realTree.height && realTree.noHit == false) {
+        //If Rock Tree has already been tapped three times, deal damage to Rock Tree
+        if (realTree.treeTap >= 3) {
+
+          realTree.hitSound.play();
+
+          bossLife -= 10;
+          realTree.height = 208;
+          realTree.width = 114;
+          realTree.treeTap = 0;
+
+          //Respawn Rock Tree and add more fake trees
+          treeHit();
+        //If tapped fewer than three times, add to the treeTap counter, make it immune, and make it smaller
+        } else {
+          realTree.betweenHits();
+
+          realTree.tapSound.play();
+
+          realTree.treeTap += 1;
+
+          //Make Rock Tree smaller every time it gets tapped
+          realTree.height = realTree.height - 208/10;
+          realTree.width = realTree.width - 114/10;
+        };
+      };
     
+    //If screen != "game"
+    } else {
+      //William Easter Egg if left gate lamp clicked in Win Screen
+      if (screen == "end" && lives > 0 && mousePos.x > 31 && mousePos.x < 43*screenWidth/800 && mousePos.y > 258*screenHeight/600 && mousePos.y < 267*screenHeight/600) {
+        williamWasHere = !williamWasHere;
+      //BiG Easter Egg if BiG logo clicked on title screen
+      } else if (screen == "title" && mousePos.x > screenWidth * 5/800 && mousePos.x < screenWidth*5/800 + bigLogo.width*screenWidth/800 && mousePos.y > screenHeight * 495/600 && mousePos.y < screenHeight * 495/600 + bigLogo.height*screenHeight/600) {
+        bigClicked = true;
+      };
+      
+      //Handle button presses for all buttons except sound buttons (those are handled in handleMouseUp() function)
+      buttons.forEach(button => {
+        if (button.name != "volumeButton" && button.name != "muteButton") {
+          button.action();
+        }
+      });
+
+    };
+  });
+}
+
+
+//Handles all resize events
+const handleResize = () => {
+  window.addEventListener("resize", () => {
+    resizeScreen();
+  });
+}
+
+
+//Loop Music
+const musicLoop = () => {
+  musicPlayer.addEventListener('timeupdate', function(){
+    //After music ends, there is a pause before repeat by default
+    //Pause can be avoided by adding a buffer and starting from the beginning once the music reaches that far from the end of the song
+    const buffer = 0.36;
+    if(this.currentTime > this.duration - buffer){
+        this.currentTime = 0
+        this.play()
+    }
+  });
+}
+
+//------------------------------------------------Animate----------------------------------\\
+const animate = () => {
+  //Call this function repeatedly
+  requestAnimationFrame(animate);
+
+  //Resize canvas size to whatever screenWidth/screenHeight are after a resize event
+  canvasContext.canvas.width = screenWidth;
+  canvasContext.canvas.height = screenHeight;
+
+
+  //During gameplay
+  if (screen == "game" && pause == false) {
+    wasteList.forEach(waste => {
+
+      //Update positions of all waste items on screen
+      waste.update();
+
+      //Play sound effect if sorted correctly
+      if(waste.hit() && waste.present == false) {
+        //play the correct sound effect
+        if (!(wasteList.length - 1 > 0 && tutorialPage == 5) && !(tutorialPage == 6)) {
+          waste.correct.play();
+        };
+
+        //Add points/difficulty for each sorted waste in open curriculum mode
+        if(openCurriculumMode) {
+          if (mode == "abc") {
+            score += 2;
+            difficulty += 0.1;
+          } else if (mode == "snc") {
+            score += 1;
+            difficulty += 0.07;
+          } else if (mode == "audit") {
+            difficulty += 0.05;
+          };
+        //if on Blueno boss or Ripta boss, each correctly sorted waste deals damage
+        } else if (bossBegin == true && (level == 1 || level == 2)) {
+          bossLife -= 10;
+        //If correctly sorted during tutorial
+        } else if (needsTutorial) {
+          tutorialWasteHit(waste);
+        }
+        
+      //If waste is out of bounds (player missed it)
+      } else if (!waste.inBounds()) {
+        //If player misses a waste item during the tutorial, activate tutorialWasteMiss() function
+        if (needsTutorial) {
+          tutorialWasteMiss(waste);
+        //Lose a life if any normal waste item is missed
+        } else if (waste.type != 'powerUp' && waste.type != 'powerDown') {
+          waste.miss.play();
+          lives -= 1;
+          //End game (except in audit mode) if player runs out of lives
+          if(lives <= 0 && mode != "audit") {
+            //End game when all lives gone
+            wasteList = [];
+            clearAllTimeouts();
+            fadeTo('winSong');
+            screen = "end";
+          };
+        };
+        
+      //For Morning Mail and iClicker tutorial levels, add the morningMail or iClicker items after the waste item has gotten slightly down the play field
+      } else if (waste.type != 'powerUp' && waste.type != 'powerDown' && needsTutorial && waste.xRatio <= (1 - 80 * waste.speed/screenWidth * screenWidth/800) && waste.xRatio >= (1 - 81 * waste.speed/screenWidth * screenWidth/800) && wasteList.length == 1) {
+        if (tutorialPage == 5) {
+          addSingleWaste("morningMail");
+        } else if (tutorialPage == 6) {
+          addSingleWaste("iClicker");
+        }
+      
+      //Check if mouse is over the pembroke seal, and lose a life if it is
+      //(Cannot put this in an event listener because pembroke seal can hit the cursor even if the cursor does not move)
+      } else if (waste.name == 'pembroke') {
+        pembrokePower(waste);
+      };
+    })
     
-    //Draw cursor
-    canvasContext.drawImage(cursor.img, cursor.x, cursor.y, cursor.img.width*screenWidth/800* 2/3, cursor.img.height*screenHeight/600 * 2/3);
+    //Remove all out-of-play (hit, clicked, or out of bounds) waste items
+    wasteList = wasteList.filter(waste => {
+      return waste.active;
+    });
+
+
+    // ** Draw appropriate screen **
+    
+    //Draw game if screen == "game"
+    drawGame();
+  } else if (screen == "title") {
+    drawTitle();
+  } else if (screen == "instruction1" || screen == "instruction2" || screen == "instruction3") {
+    drawInstruction();
+  } else if (screen == "end") {
+    drawEnd();
+  } else if (screen == "roundOver") {
+    drawRoundOver();
+  } else if (screen == "load") {
+    drawLoad();
+  };
+
+
+  //Draw cursor
+  canvasContext.drawImage(cursor.img, cursor.x, cursor.y, cursor.img.width*screenWidth/800* 2/3, cursor.img.height*screenHeight/600 * 2/3);
 }
 
 
 
 //-------------------------------------------------Game functions---------------------------------------\\
-//This function adds waste to the screen at random intervals
-function addWaste() {
 
-    if (firstWaste) {
-        firstWaste = false;
-        if (bossBegin == false) {
-            var isSpecial = Math.random() * 10;
-
-            if (isSpecial >= 10 - specialFreq) {
-                var itemIndex = wasteTypes[Math.round(Math.random()*(specialTypes.length -1)) + (wasteTypes.length - specialTypes.length)];
-            } else {
-                var itemIndex = places[level - 1][Math.round(Math.random()*(places[level - 1].length - specialTypes.length - 1))];
-            };
-
-        } else { //No powerUps or powerDowns in boss fights
-            var itemIndex = places[level - 1][Math.round(Math.random()*(places[level - 1].length - specialTypes.length - 1))];
-        };
-        
-        if (pause == false) {
-            wasteList.push(Waste({}, itemIndex));
-        };
-        
-    }
-    //Add at random intervals
-    if (bossBegin == true && level == 2) {
-        var timeBetween = 3000;
+//Adds waste to the screen at random intervals
+const addWaste = () => {
+  let itemIndex;
+  //If this is the first waste object, add it immediately without waiting for an interval to complete
+  if (firstWaste) {
+    firstWaste = false;
+    if (bossBegin == false) {
+      //isSpecial: random number from 0 to 9 to determine if this waste item is a special item (powerup or powerdown)
+      let isSpecial = Math.floor(Math.random() * 10);
+      //If it is a special item
+      if (isSpecial >= 10 - specialFreq) {
+        //itemIndex: object for the waste item chosen from wasteTypes array
+        itemIndex = wasteTypes[Math.round(Math.random()*(specialTypes.length -1)) + (wasteTypes.length - specialTypes.length)];
+      //If it is not a special item
+      } else {
+        //Select item from all non-special items based on the level
+        itemIndex = places[level - 1][Math.round(Math.random()*(places[level - 1].length - specialTypes.length - 1))];
+      };
+    //If this is not a boss fight (no powerups or powerdowns in boss fights)
     } else {
-        var timeBetween = Math.random()*2000 + 1500 / (difficulty / 1.5);
+      //Select item from all non-special items
+      itemIndex = places[level - 1][Math.round(Math.random()*(places[level - 1].length - specialTypes.length - 1))];
     };
     
-    wasteRepeat = setTimeout(function() {
+    //Do not add to waste list if game is paused
+    if (pause == false) {
+      wasteList.push(Waste({}, itemIndex));
+    };
+        
+  }
+  
+  //Add at random intervals after first waste
+  let timeBetween;
+  if (bossBegin == true && level == 2) {
+    //timeBetween determines the amount of time between adding waste items
+    //timeBetween is set to 3000 ms for Ripta boss
+    timeBetween = 3000;
+    
+  } else {
+    //For all other cases, timeBetween is a random number that increases with difficulty
+    timeBetween = Math.random()*2000 + 1500 / (difficulty / 1.5);
+  };
+    
+  //Waste is added at random intervals (determined by timeBetween) as long as wasteRepeat is running
+  wasteRepeat = setTimeout(function() {
 
+    //Same process as first waste     
+    if (bossBegin == false) {
+      let isSpecial = Math.random() * 10;
 
-            //Decide waste options according to the game level
+      if (isSpecial >= 10 - specialFreq) {
+        itemIndex = wasteTypes[Math.round(Math.random()*(specialTypes.length -1)) + (wasteTypes.length - specialTypes.length)];
+      } else {
+        itemIndex = places[level - 1][Math.round(Math.random()*(places[level - 1].length - specialTypes.length - 1))];
+      };
+    } else { //No powerUps or powerDowns in boss fights
+      itemIndex = places[level - 1][Math.round(Math.random()*(places[level - 1].length - specialTypes.length - 1))];
+    };
             
-            if (bossBegin == false) {
-                var isSpecial = Math.random() * 10;
-
-                if (isSpecial >= 10 - specialFreq) {
-                    var itemIndex = wasteTypes[Math.round(Math.random()*(specialTypes.length -1)) + (wasteTypes.length - specialTypes.length)];
-                } else {
-                    var itemIndex = places[level - 1][Math.round(Math.random()*(places[level - 1].length - specialTypes.length - 1))];
-                };
-            } else { //No powerUps or powerDowns in boss fights
-                var itemIndex = places[level - 1][Math.round(Math.random()*(places[level - 1].length - specialTypes.length - 1))];
-            };
-            
-            if (pause == false) {
-                wasteList.push(Waste({}, itemIndex));
-            };
-            //Call the same function again to add more waste
-            addWaste();
-    }, timeBetween);
+    if (pause == false) {
+      wasteList.push(Waste({}, itemIndex));
+    };
+    
+    //Call the same function again to add more waste
+    addWaste();
+  }, timeBetween);
 };
 
+
+//Starts adding waste items for a level
+//firstWaste should be true whenever calling addWaste()
+const startAddWaste = () => {
+  firstWaste = true;
+  wasteList = [];
+  addWaste();
+}
+
+
 //Adds only a single waste item
-function addSingleWaste(wasteName) {
+const addSingleWaste = wasteName => {
   let itemIndex;
   for (let i = 0; i < wasteTypes.length; i++) {
     if (wasteTypes[i].name == wasteName) {
@@ -1371,429 +1539,528 @@ function addSingleWaste(wasteName) {
     }
   }
   
-  wasteList.push(Waste({}, itemIndex));
+  wasteList.push(Waste({}, itemIndex)); 
+};
+
+
+//Creates a string with the current game time
+const clockTime = (time, interval) => {
+  //Finds relevant values from the time given in the format: hour:minutes AM/PM
+  let hourStr = time.substr(0,time.indexOf(':'))
+  let minStr = time.substr(time.indexOf(':') + 1, 2)
+  let dayNight = time.substr(time.length - 2, 2);
   
-  /*if (pause == false) {
-      wasteList.push(Waste({}, itemIndex));
-  };*/   
-};
+  //Converts string values of the time to integers
+  let hourInt = parseInt(hourStr);
+  let minInt = parseInt(minStr);
 
+  //Increases the time by the inputted interval
+  minInt = minInt + interval;
+  if (minInt >= 60) {
+    hourInt = hourInt + 1;
+    minInt = minInt % 60;
+  }
+  
+  //Adjusts for AM/PM
+  if (hourInt == 12 && minInt == 0) {
 
-//Clock Time:
-function clockTime(time, interval) {
-    var hourStr = time.substr(0,time.indexOf(':'))
-    var minStr = time.substr(time.indexOf(':') + 1, 2)
-    var hourInt = parseInt(hourStr);
-    var minInt = parseInt(minStr);
-    var dayNight = time.substr(time.length - 2, 2);
-    
-    
-    minInt = minInt + interval;
-    if (minInt >= 60) {
-        hourInt = hourInt + 1;
-        minInt = minInt % 60;
-    }
-    
-    if (hourInt == 12 && minInt == 0) {
-        
-        if (dayNight == 'AM') {
-            dayNight = 'PM';
-        } else {
-            dayNight = 'AM';
-        };
-    } else if (hourInt > 12) {
-        hourInt = hourInt % 12;
-    };
-    
-    if (minInt == 0) {
-        minStr = '00';
+    if (dayNight == 'AM') {
+        dayNight = 'PM';
     } else {
-        minStr = minInt.toString();
+        dayNight = 'AM';
+    };
+  } else if (hourInt > 12) {
+    hourInt = hourInt % 12;
+  };
+  
+  //Converts integer back into string
+  if (minInt == 0) {
+    minStr = '00';
+  } else {
+    minStr = minInt.toString();
+  }
+  hourStr = hourInt.toString();
+  
+  //Puts hour, minutes, and AM/PM together to form gameTime string
+  gameTime = hourStr + ':' + minStr + ' ' + dayNight;
+}
+
+//Game timer
+const timer = level => {
+  //Start time based on the level
+  if (level == 1) {
+    gameTime = '6:00 PM';
+  } else if (level == 3) {
+    gameTime = '7:30 AM';
+  } else if (level == 2) {
+    gameTime = '11:00 AM';
+  };
+  
+  //Timer interval
+  progress = setInterval(function() {
+    //End time based on level
+    if ((level == 1 && gameTime == '2:00 AM') || (level == 3 && gameTime == '7:30 PM') || (level == 2 && gameTime == '2:00 AM')) {
+      //Don't slow down anymore for Jo's Level
+      speedUp = false;
+      //Start boss fight
+      boss = true;
+      fadeTo('bossSong');
+      //Remove all waste items
+      wasteList = [];
+      //Clear this interval and all others
+      clearAllTimeouts();
+      return;
+    //During play, increase game time at regular intervals
+    } else if (pause == false) {
+      clockTime(gameTime, 30);
+    };
+  },3000); //should be 3000-----------------------------------------------------Changes speed of game
+}
+
+
+//Draw Boss Fight Images
+const bossFight = level => {
+  // ** Health Bar **
+  //Draw health bar (scili) with x-position determined by boss health
+  canvasContext.drawImage(healthBar, 0, 0, healthBar.width * bossLife/100, healthBar.height, screenWidth - healthBar.width * 1.25 * bossLife/100 * screenWidth/800, screenHeight * 0.8/10, healthBar.width * 1.25 * bossLife/100 * screenWidth/800, healthBar.height * 1.25 * screenHeight/600);
+  //Draw "Boss Health" Label above health bar
+  canvasContext.drawImage(healthLabel, screenWidth * 14/15 - healthLabel.width * screenWidth/800, screenWidth*0.3/10, healthLabel.width * screenWidth/800, healthLabel.height * screenHeight/600);
+  
+  //** Boss Image **
+  //Blueno for level 1
+  if (level == 1) {
+    //Draw Blueno Sprite
+    spriteUpdate(blueno, 1, 2, screenWidth * 14/15 - player.img.width/player.frames * screenWidth/800, screenHeight * 3/10 + (player.img.height - blueno.img.height) * screenHeight/600);
+    
+    //Draw Blueno introduction caption
+    if (bossBegin == false) {
+        canvasContext.drawImage(bluenoIntro, (800/2 - (bluenoIntro.width/1)/2) * screenWidth/800, (600/2 - (bluenoIntro.height/1)/2) * screenHeight/600, bluenoIntro.width/1 * screenWidth/800, bluenoIntro.height/1 * screenHeight/600);
     }
-    hourStr = hourInt.toString();
-    
-    gameTime = hourStr + ':' + minStr + ' ' + dayNight;
-}
-
-//Game timer:
-function timer(level) { //waste countDown
-    if (level == 1) {
-        gameTime = '6:00 PM';
-    } else if (level == 3) {
-        gameTime = '7:30 AM';
-    } else if (level == 2) {
-        gameTime = '11:00 AM';
+  
+  //Rock Tree for level 3
+  } else if(level == 3) {
+    //Draw Rock Tree sprite to the right of the screen and the caption in the middle before boss fight begins
+    if (bossBegin == false) {
+      canvasContext.drawImage(rockTreeIntro, (800/2 - (rockTreeIntro.width/1)/2) * screenWidth/800, (600/2 - (rockTreeIntro.height/1)/2) * screenHeight/600, rockTreeIntro.width/1 * screenWidth/800, rockTreeIntro.height/1 * screenHeight/600);
+      spriteUpdate(realTree, 1, 2, screenWidth * 14/15 - player.img.width/player.frames * screenWidth/800, screenHeight * 3/10 + (player.img.height - realTree.img.height) * screenHeight/600);
+    //During the fight gameplay, draw the real tree and fake trees in random locations
+    } else {
+      realTree.draw()
+      fakeTrees.forEach(function(tree) {
+          tree.draw();
+      })
     };
-    
-    progress = setInterval(function() {
-        if ((level == 1 && gameTime == '2:00 AM') || (level == 3 && gameTime == '7:30 PM') || (level == 2 && gameTime == '2:00 AM')) {
-            speedUp = false;
-            boss = true;
-            //fadeOutActionSong();
-            //fadeToBossSong();
-            fadeTo('bossSong');
-            //clearInterval(progress);
-            wasteList = [];
-            //difficulty = startDifficulty;
-            //clearTimeout(wasteRepeat);
-            clearAllTimeouts();
-            return;
-        } else if (pause == false) {
-            clockTime(gameTime, 30);
-        };
-    },3000); //should be 3000-----------------------------------------------------Changes speed of game
-}
-
-
-function bossFight(level) {
-    canvasContext.drawImage(healthBar, 0, 0, healthBar.width * bossLife/100, healthBar.height, screenWidth - healthBar.width * 1.25 * bossLife/100 * screenWidth/800, screenHeight * 0.8/10, healthBar.width * 1.25 * bossLife/100 * screenWidth/800, healthBar.height * 1.25 * screenHeight/600);
-    canvasContext.drawImage(healthLabel, screenWidth * 14/15 - healthLabel.width * screenWidth/800, screenWidth*0.3/10, healthLabel.width * screenWidth/800, healthLabel.height * screenHeight/600);
-    if (level == 1) {
-        spriteUpdate(blueno, 1, 2, screenWidth * 14/15 - player.img.width/player.frames * screenWidth/800, screenHeight * 3/10 + (player.img.height - blueno.img.height) * screenHeight/600);
-
-        if (bossBegin == false) {
-            canvasContext.drawImage(bluenoIntro, (800/2 - (bluenoIntro.width/1)/2) * screenWidth/800, (600/2 - (bluenoIntro.height/1)/2) * screenHeight/600, bluenoIntro.width/1 * screenWidth/800, bluenoIntro.height/1 * screenHeight/600);
-        }
-        
-    } else if(level == 3) {
-        
-        if (bossBegin == false) {
-            canvasContext.drawImage(rockTreeIntro, (800/2 - (rockTreeIntro.width/1)/2) * screenWidth/800, (600/2 - (rockTreeIntro.height/1)/2) * screenHeight/600, rockTreeIntro.width/1 * screenWidth/800, rockTreeIntro.height/1 * screenHeight/600);
-            spriteUpdate(realTree, 1, 2, screenWidth * 14/15 - player.img.width/player.frames * screenWidth/800, screenHeight * 3/10 + (player.img.height - realTree.img.height) * screenHeight/600);
-        } else {
-            realTree.draw()
-            fakeTrees.forEach(function(tree) {
-                tree.draw();
-            })
-        };
-    } else if(level == 2) {
-        spriteUpdate(ripta, 1, 2, screenWidth * 14/15 - player.img.width/player.frames * screenWidth/800, screenHeight * 3/10 + (player.img.height - ripta.img.height) * screenHeight/600);
-       if (bossBegin == false) {
-            canvasContext.drawImage(riptaIntro, (800/2 - (riptaIntro.width/1)/2) * screenWidth/800, (600/2 - (riptaIntro.height/1)/2) * screenHeight/600, riptaIntro.width/1 * screenWidth/800, riptaIntro.height/1 * screenHeight/600);
-        }
+  
+  //Ripta for level 2
+  } else if(level == 2) {
+    //Draw ripta sprite
+    spriteUpdate(ripta, 1, 2, screenWidth * 14/15 - player.img.width/player.frames * screenWidth/800, screenHeight * 3/10 + (player.img.height - ripta.img.height) * screenHeight/600);
+    //Draw Ripta introduction caption before boss fight gameplay
+    if (bossBegin == false) {
+      canvasContext.drawImage(riptaIntro, (800/2 - (riptaIntro.width/1)/2) * screenWidth/800, (600/2 - (riptaIntro.height/1)/2) * screenHeight/600, riptaIntro.width/1 * screenWidth/800, riptaIntro.height/1 * screenHeight/600);
     }
+  }
+  
+  // ** Boss Fight End Sequence **
+  //If boss defeated
+  if (bossLife <= 0) {
+    //End boss fight
+    bossBegin = false;
+    boss = false;
+    roundWon = true;
+    //Reset difficulty, boss health (for next level), and waste list
+    bossLife = 100;
+    difficulty = startDifficulty;
+    wasteList = [];
+    clearTimeout(wasteRepeat);
     
-    if (bossLife <= 0) {
-        bossBegin = false;
-        boss = false;
-        roundWon = true;
-        bossLife = 100;
-        difficulty = startDifficulty;
-        wasteList = [];
-        
-        fadeTo('winSong');
-        clearTimeout(wasteRepeat);
-        if (level == 3) {
-            //fadeOutBossSong();
-            //fadeToActionSong();
-            openCurriculumUnlocked = true;
-            screen = "end";
-        };
-    };
-};
-
-function treeHit() {
-    if (realTree.treesHit != 0) {
-        bossLife -= 10;
-    };
+    //Change music
+    fadeTo('winSong');
     
-    realTree.treesHit += 1;
-    realTree.x = screenWidth/2 + Math.random() * screenWidth/2 - realTree.img.width/realTree.frames * screenWidth/800;
-    realTree.y = screenHeight/3 + Math.random() * screenHeight/3;
-    fakeTrees = [];
-    
-    for (var i = 0; i < realTree.treesHit; i++) {
-        fakeTrees.push(newTrees());
+    //End game if that was the last boss
+    if (level == 3) {
+      openCurriculumUnlocked = true;
+      screen = "end";
     };
+  };
 };
 
-function challenges() {
-    if (level == 1 && boss == false && roundWon == false && (gameTime == '12:00 AM' || gameTime == '12:30 AM' || gameTime == '1:00 AM' || gameTime == '1:30 AM' || gameTime == '2:00 AM')) {
-        if (!speedUp) {
-            difficulty = difficulty * 2;
-        };
-        speedUp = true;
-        canvasContext.drawImage(lastCall, (400 - 578/2) * screenWidth/800, screenHeight * 2/10, 578 * screenWidth/800, 34 * screenHeight/600);
-    } else if (level == 3 && (gameTime == '9:00 AM' || gameTime == '9:30 AM' || gameTime == '10:00 AM')) {
-        canvasContext.drawImage(iceCream, screenWidth/4, screenHeight/5, screenWidth*3/4, screenHeight*3/4);
-        canvasContext.drawImage(brokenMachine, (400 - 553/2) * screenWidth/800, screenHeight * 2/10, 553 * screenWidth/800, 34 * screenHeight/600);
-    } else if (level == 2 && (gameTime == '1:00 PM' || gameTime == '1:30 PM' || gameTime == '2:00 PM')) {
-        //colorRect(screenWidth/2, screenHeight/3, screenWidth/2, 400);
-        canvasContext.drawImage(andrewsCrowd, screenWidth*500/800, screenHeight * 3/10, 344 * screenWidth/800, 287 * screenHeight/600);
-        canvasContext.drawImage(phoLine, (400 - 297/2) * screenWidth/800, screenHeight * 2/10, 297 * screenWidth/800, 34 * screenHeight/600);
-    }
-    if (difficulty >= 5 && level == 1) {
-        //colorText("Last call", screenWidth/2, screenHeight*3/10, 'black');
+
+//Handle damage-blowing hits on the Rock Tree boss
+const treeHit = () => {
+  //For all hits (except for the initialization hit), subtract damage
+  if (realTree.treesHit != 0) {
+    bossLife -= 10;
+  };
+  
+  //Move rock tree to a random location
+  realTree.x = screenWidth/2 + Math.random() * screenWidth/2 - realTree.img.width/realTree.frames * screenWidth/800;
+  realTree.y = screenHeight/3 + Math.random() * screenHeight/3;
+  
+  //Add to the treesHit counter to determine how many fake trees to draw
+  realTree.treesHit += 1;
+  
+  //Add fake trees
+  fakeTrees = [];
+  for (let i = 0; i < realTree.treesHit; i++) {
+    fakeTrees.push(newTrees());
+  };
+};
+
+
+//Handle all challenge events (Last Call, Pho Line, Ice Cream Machine)
+const challenges = () => {
+  //For the last two hours of Jo's level, speed up gameplay and draw last call announcement
+  if (level == 1 && boss == false && roundWon == false && (gameTime == '12:00 AM' || gameTime == '12:30 AM' || gameTime == '1:00 AM' || gameTime == '1:30 AM' || gameTime == '2:00 AM')) {
+    //Only speed up gameplay if it has not already been sped up
+    if (!speedUp) {
+      difficulty = difficulty * 2;
     };
+    speedUp = true;
+    //Draw Last Call announcement
+    canvasContext.drawImage(lastCall, (400 - 578/2) * screenWidth/800, screenHeight * 2/10, 578 * screenWidth/800, 34 * screenHeight/600);
+  //From 9AM to 10:30AM, add ice cream view blocker and draw Broken Ice Cream Machine announcement
+  } else if (level == 3 && (gameTime == '9:00 AM' || gameTime == '9:30 AM' || gameTime == '10:00 AM')) {
+    //Draw Ice Cream view blocker
+    canvasContext.drawImage(iceCream, screenWidth/4, screenHeight/5, screenWidth*3/4, screenHeight*3/4);
+    //Draw broken ice cream machine announcement
+    canvasContext.drawImage(brokenMachine, (400 - 553/2) * screenWidth/800, screenHeight * 2/10, 553 * screenWidth/800, 34 * screenHeight/600);
+  //From 1PM to 2:30PM in Andrews, add Pho Line view blocker and announcement
+  } else if (level == 2 && (gameTime == '1:00 PM' || gameTime == '1:30 PM' || gameTime == '2:00 PM')) {
+    //Draw pho line view blocker
+    canvasContext.drawImage(andrewsCrowd, screenWidth*500/800, screenHeight * 3/10, 344 * screenWidth/800, 287 * screenHeight/600);
+    //Draw announcement
+    canvasContext.drawImage(phoLine, (400 - 297/2) * screenWidth/800, screenHeight * 2/10, 297 * screenWidth/800, 34 * screenHeight/600);
+  }
 };
 
-function clickerPower() {
-    startClick += 1;
-    clickerTime = setTimeout(function() {
-        startClick -= 1;
-    }, 5000);
+
+// ** Special Item Powers **
+
+//iClicker Power timeout
+const clickerPower = () => {
+  //If multiple iClickers are clicked during the timeout, iClicker power ends when the last timeout ends
+  startClick += 1;
+  clickerTime = setTimeout(function() {
+    startClick -= 1;
+  }, 5000);
 };
 
-function mailPower() {
-    difficulty = difficulty / 1.5;
-    startMail += 1;
-    mailTime = setTimeout(function() {
-        difficulty = difficulty * 1.5;
-        startMail -= 1;
-    }, 5000);
+//morning mail power timeout
+const mailPower = () => {
+  //Slow down game
+  difficulty = difficulty / 1.5;
+  //If multiple morning mails are clicked during the timeout, speed game back up to normal when the last timeout ends
+  //Each morning mail clicked during the timeout adds additional slowdown
+  startMail += 1;
+  mailTime = setTimeout(function() {
+    difficulty = difficulty * 1.5;
+    startMail -= 1;
+  }, 5000);
 };
 
-function pembrokePower(waste) {
-    if (click(cursor.x, cursor.y, waste)) {
-        waste.miss.play();
-        lives -= 1;
-        waste.active = false;
-        if (needsTutorial) {
-          addSingleWaste("pembroke");
-        } else if(lives <= 0 && mode != "audit") {
-            //End game when all lives gone
-            //clearInterval(progress);
-            wasteList = [];
-            //difficulty = startDifficulty;
-            //clearTimeout(wasteRepeat);
-            //clearTimeout(clickerTime);
-            //clearTimeout(mailTime);
-            //mailtime = null;
-            clearAllTimeouts();
-            fadeTo('winSong');
-            screen = "end";
-            //actionSong.pause();
-        };
+//Pembroke Seal powerdown
+const pembrokePower = waste => {
+  //If the cursor is touching the pembroke seal, lose a life
+  if (click(cursor.x, cursor.y, waste)) {
+    //Play unhappy sound effect
+    waste.miss.play();
+    lives -= 1;
+    //Remove the pembroke seal from play
+    waste.active = false;
+    //If the cursor touches the pembroke seal during the tutorial, add a new pembroke seal, but do not allow game to end
+    if (needsTutorial) {
+      addSingleWaste("pembroke");
+    //If regular gameplay and player runs out of lives (not on audit mode), end game
+    } else if(lives <= 0 && mode != "audit") {
+      wasteList = [];
+      clearAllTimeouts();
+      fadeTo('winSong');
+      screen = "end";
     };
+  };
 };
 
-//Handles sprite clicks
-function click(mouseX, mouseY, sprite) {
-    return mouseX >= sprite.xRatio*screenWidth && mouseX <= sprite.xRatio*screenWidth + sprite.img.width/sprite.frames*screenWidth/800 && mouseY >= sprite.yRatio*screenHeight && mouseY <= sprite.yRatio*screenHeight + sprite.img.height*screenHeight/600;
+
+//Determines if mouse is within sprite hitbox
+const click = (mouseX, mouseY, sprite) => {
+  return mouseX >= sprite.xRatio*screenWidth && mouseX <= sprite.xRatio*screenWidth + sprite.img.width/sprite.frames*screenWidth/800 && mouseY >= sprite.yRatio*screenHeight && mouseY <= sprite.yRatio*screenHeight + sprite.img.height*screenHeight/600;
 }
 
-//This function makes text
-function colorText(text, centerX, centerY, fillColor) {
-    var textSize = 30 * screenHeight/600;
-    var textFont = textSize + "px" + " Trash Dash";
-    canvasContext.font = textFont;
-    //canvasContext.font = "30px Trash Dash";
-    canvasContext.textAlign = "center";
-    canvasContext.fillStyle = fillColor;
-    canvasContext.fillText(text, centerX, centerY);
-}
 
-function colorRect(x, y, width, height, fillColor) {
-    canvasContext.fillStyle = fillColor;
-    canvasContext.rect(x,y,width,height);
-    canvasContext.fill();
+//Draw text
+const colorText = (text, centerX, centerY, fillColor) => {
+  const textSize = 30 * screenHeight/600;
+  const textFont = textSize + "px" + " Trash Dash";
+  canvasContext.font = textFont;
+  canvasContext.textAlign = "center";
+  canvasContext.fillStyle = fillColor;
+  canvasContext.fillText(text, centerX, centerY);
 }
 
 
-function calculateMousePos(evt) {
-    var rect = canvas.getBoundingClientRect(), root = document.documentElement;
-    
-    var mouseX = evt.clientX - rect.left - root.scrollLeft;
-    var mouseY = evt.clientY - rect.top - root.scrollTop;
-    return {
-        x: mouseX,
-        y: mouseY
-    };
+//Draw rectangles
+const colorRect = (x, y, width, height, fillColor) => {
+  canvasContext.fillStyle = fillColor;
+  canvasContext.rect(x,y,width,height);
+  canvasContext.fill();
+}
+
+
+//Calculate mouse position and return that as an x and y object value
+const calculateMousePos = evt => {
+  const rect = canvas.getBoundingClientRect(), root = document.documentElement;
+
+  const mouseX = evt.clientX - rect.left - root.scrollLeft;
+  const mouseY = evt.clientY - rect.top - root.scrollTop;
+  return {
+    x: mouseX,
+    y: mouseY
+  };
 }
 
 
 //Updates sprite sheets
-function spriteUpdate(sprite, startFrame, frameSum, x, y) {
-    if (frameTick != 17) {
-        canvasContext.drawImage(sprite.img, (sprite.currentFrame - 1) * sprite.img.width/sprite.frames, 0, sprite.img.width/sprite.frames, sprite.img.height, x, y, sprite.img.width/sprite.frames*screenWidth/800, sprite.img.height*screenHeight/600);
-        return;
-    }
-    
-    //If it's at the max frame
-    if (startFrame + (frameSum - 1) == sprite.currentFrame) {
-        canvasContext.drawImage(sprite.img, (startFrame - 1) * sprite.img.width/sprite.frames, 0, sprite.img.width/sprite.frames, sprite.img.height, x, y, sprite.img.width/sprite.frames*screenWidth/800, sprite.img.height*screenHeight/600);
-        sprite.currentFrame = startFrame;
-    } else { //If it's not at its max frame
-        canvasContext.drawImage(sprite.img, sprite.currentFrame * sprite.img.width/sprite.frames, 0, sprite.img.width/sprite.frames, sprite.img.height, x, y, sprite.img.width/sprite.frames*screenWidth/800, sprite.img.height*screenHeight/600);
-        sprite.currentFrame += 1;
-    }
+const spriteUpdate = (sprite, startFrame, frameSum, x, y) => {
+  //Every 17 game frames, the sprite sheet frame shifts
+  //In the time between frame shifts, continue drawing the current sprite sheet frame
+  if (frameTick != 17) {
+    canvasContext.drawImage(sprite.img, (sprite.currentFrame - 1) * sprite.img.width/sprite.frames, 0, sprite.img.width/sprite.frames, sprite.img.height, x, y, sprite.img.width/sprite.frames*screenWidth/800, sprite.img.height*screenHeight/600);
+    return;
+  }
+
+  // ** Handle frame shifts (frameTick == 17) **
+  
+  //If the sprite is currently on the last frame in its cycle, go back to the first frame in the cycle
+  if (startFrame + (frameSum - 1) == sprite.currentFrame) {
+    canvasContext.drawImage(sprite.img, (startFrame - 1) * sprite.img.width/sprite.frames, 0, sprite.img.width/sprite.frames, sprite.img.height, x, y, sprite.img.width/sprite.frames*screenWidth/800, sprite.img.height*screenHeight/600);
+    sprite.currentFrame = startFrame;
+  //If the sprite is not on the last frame in its cycle, move to the next frame
+  } else {
+    canvasContext.drawImage(sprite.img, sprite.currentFrame * sprite.img.width/sprite.frames, 0, sprite.img.width/sprite.frames, sprite.img.height, x, y, sprite.img.width/sprite.frames*screenWidth/800, sprite.img.height*screenHeight/600);
+    sprite.currentFrame += 1;
+  }
 }
 
-function treeUpdate(sprite, startFrame, x, y) {
-    if (frameTick != 17) {
-        canvasContext.drawImage(sprite.img, (sprite.currentFrame - 1) * sprite.img.width/sprite.frames, 0, sprite.img.width/sprite.frames, sprite.img.height, x + sprite.treeTap * 114/10 /2 * screenWidth/800, y + sprite.treeTap * 208/10 * screenHeight/600, sprite.width*screenWidth/800, sprite.height*screenHeight/600);
-    } else if (startFrame + 1 <= sprite.currentFrame) { //max frame
-        canvasContext.drawImage(sprite.img, (startFrame - 1) * sprite.img.width/sprite.frames, 0, sprite.img.width/sprite.frames, sprite.img.height, x + sprite.treeTap * 114/10 / 2 * screenWidth/800, y + sprite.treeTap * 208/10 * screenHeight/600, sprite.width*screenWidth/800, sprite.height*screenHeight/600);
-        sprite.currentFrame = startFrame;
-    } else { //If it's not at its max frame
-        canvasContext.drawImage(sprite.img, sprite.currentFrame * sprite.img.width/sprite.frames, 0, sprite.img.width/sprite.frames, sprite.img.height, x + sprite.treeTap * 114/10 /2 * screenWidth/800, y + sprite.treeTap * 208/10 * screenHeight/600, sprite.width*screenWidth/800, sprite.height*screenHeight/600);
-        sprite.currentFrame += 1;
-    }
+
+//Like spriteUpdate() but specifically for the Rock Tree Boss
+const treeUpdate = (sprite, startFrame, x, y) => {
+  //Keep drawing the current frame between frame shifts
+  if (frameTick != 17) {
+    canvasContext.drawImage(sprite.img, (sprite.currentFrame - 1) * sprite.img.width/sprite.frames, 0, sprite.img.width/sprite.frames, sprite.img.height, x + sprite.treeTap * 114/10 /2 * screenWidth/800, y + sprite.treeTap * 208/10 * screenHeight/600, sprite.width*screenWidth/800, sprite.height*screenHeight/600);
+  //If it is a frame shift (frameTick == 17) and the sprite is on its last frame (2nd frame), cycle back to the first
+  } else if (startFrame + 1 <= sprite.currentFrame) {
+    canvasContext.drawImage(sprite.img, (startFrame - 1) * sprite.img.width/sprite.frames, 0, sprite.img.width/sprite.frames, sprite.img.height, x + sprite.treeTap * 114/10 / 2 * screenWidth/800, y + sprite.treeTap * 208/10 * screenHeight/600, sprite.width*screenWidth/800, sprite.height*screenHeight/600);
+    sprite.currentFrame = startFrame;
+  //If it is a frame shift (frameTick == 17) and the sprite is on its first frame, move to the second
+  } else {
+    canvasContext.drawImage(sprite.img, sprite.currentFrame * sprite.img.width/sprite.frames, 0, sprite.img.width/sprite.frames, sprite.img.height, x + sprite.treeTap * 114/10 /2 * screenWidth/800, y + sprite.treeTap * 208/10 * screenHeight/600, sprite.width*screenWidth/800, sprite.height*screenHeight/600);
+    sprite.currentFrame += 1;
+  }
 };
 
 
+//Change player type based on key press
+//Default is black
 player.shirtColor = function(key = 0) {
-    var sheetNum
-    if (key == 68 || key == 87 || key == 65) {
-        colorChange = true;
+  let sheetNum;
+  
+  //If D, W, or A pressed, do not allow any other color changes as long as colorChange is true
+  if (key == 68 || key == 87 || key == 65) {
+    colorChange = true;
     
-        if (key == 68) { //D-key
-            sheetNum = 4;
-            player.type = 'gray';
-        } else if (key == 87) { //W-Key
-            sheetNum = 3;
-            player.type = 'green'
-        } else if (key == 65) { //A-Key
-            sheetNum = 2;
-            player.type = 'blue';
-        } else if (key == 83) { //S-Key
-            sheetNum = 1;
-            player.type = 'black';
-        } else {
-            sheetNum = 1;
-            player.type = 'black';
-        };
-
-        directionButtons.forEach(function(button) {
-            button.action(key);
-        })
-        player.currentFrame += 4 * (sheetNum - Math.ceil(player.currentFrame/4));
-
-        setTimeout(function() {
-            player.type = 'black';
-
-            player.currentFrame += 4 * (1 - Math.ceil(player.currentFrame/4));
-            directionButtons.forEach(function(button) {
-                button.action(0);
-            })
-
-            colorChange = false;
-        }, 500);
+    //If D key pressed, change player.type to 'gray' (trash)
+    if (key == 68) {
+      sheetNum = 4;
+      player.type = 'gray';
+    //If W key pressed, change player.type to 'green' (compost)
+    } else if (key == 87) {
+      sheetNum = 3;
+      player.type = 'green'
+    //If A key pressed, change player.type to 'blue' (recycling)
+    } else if (key == 65) {
+      sheetNum = 2;
+      player.type = 'blue';
+    //All other key presses keep player.type as 'black' (default)
+    } else {
+      sheetNum = 1;
+      player.type = 'black';
     };
+  
+    //Highlight the corresponding direction button
+    directionButtons.forEach(function(button) {
+        button.action(key);
+    })
+    
+    //Move the player sprite to the correct color without resetting the run animation to its first frame
+    player.currentFrame += 4 * (sheetNum - Math.ceil(player.currentFrame/4));
+    
+    //After timeout ends, player can change colors again
+    setTimeout(function() {
+      //Reset player.type to the default
+      player.type = 'black';
+      
+      //Reset player sprite animation to black
+      player.currentFrame += 4 * (1 - Math.ceil(player.currentFrame/4));
+      //Unhighlight all direction buttons
+      directionButtons.forEach(function(button) {
+        button.action(0);
+      })
+
+      colorChange = false;
+    //this timeout length determines the wait time before changing colors 
+    }, 500); 
+  };
 };
 
+
+//Draw the player sprite
 player.draw = function() {
-    if (roundWon == true) {
-        canvasContext.drawImage(playerStatic, screenWidth/15, screenHeight*3/10, playerStatic.width*screenWidth/800, playerStatic.height*screenHeight/600);
-    } else if (player.type == 'black') {
-        spriteUpdate(player, 1, 4, screenWidth/15, screenHeight*3/10);
-    } else if (player.type == 'blue') {
-        spriteUpdate(player, 5, 4, screenWidth/15, screenHeight*3/10);
-    } else if (player.type == 'green') {
-        spriteUpdate(player, 9, 4, screenWidth/15, screenHeight*3/10);
-    } else if (player.type == 'gray') {
-        spriteUpdate(player, 13, 4, screenWidth/15, screenHeight*3/10);
-    };
+  //Draw the static player image between rounds
+  if (roundWon == true) {
+    canvasContext.drawImage(playerStatic, screenWidth/15, screenHeight*3/10, playerStatic.width*screenWidth/800, playerStatic.height*screenHeight/600);
+  //Draw the black shirt player run sequence
+  } else if (player.type == 'black') {
+    spriteUpdate(player, 1, 4, screenWidth/15, screenHeight*3/10);
+  //Draw the blue shirt player run sequence
+  } else if (player.type == 'blue') {
+    spriteUpdate(player, 5, 4, screenWidth/15, screenHeight*3/10);
+  //Draw the green shirt player run sequence
+  } else if (player.type == 'green') {
+    spriteUpdate(player, 9, 4, screenWidth/15, screenHeight*3/10);
+  //Draw the gray shirt player run sequence
+  } else if (player.type == 'gray') {
+    spriteUpdate(player, 13, 4, screenWidth/15, screenHeight*3/10);
+  };
 }
 
 
-
+//Resize the canvas maintaining 600/800 aspect ratio whenever the window is resized
 function resizeScreen() {
-        if (window.innerWidth < window.innerHeight*800/600) {
-        screenWidth = (window.innerWidth);
-        screenHeight = (window.innerWidth)*600/800;
-    } else {
-        screenWidth = (window.innerHeight)*800/600;
-        screenHeight = (window.innerHeight);
-    }
+  //redraw canvas such that screenHeight/screenWidth = 600/800 for any window
+  
+  if (window.innerWidth < window.innerHeight*800/600) {
+    screenWidth = (window.innerWidth);
+    screenHeight = (window.innerWidth)*600/800;
+  } else {
+    screenWidth = (window.innerHeight)*800/600;
+    screenHeight = (window.innerHeight);
+  }
 }
+
 
 //Restarts the game
-function newGame() {
-    screen = "game";
-    lives = startLives;
-    score = 0;
-    difficulty = startDifficulty;
-    if (!openCurriculumMode) {
-        level = 1;
-    } else {
-        level = 4;
-    };
-    wasteList = [];
-    firstWaste = true;
-    boss = false;
-    bossBegin = false;
-    roundWon = false;
-    startClick = 0;
-    startMail = 0;
-    speedUp = false;
-    keyList = [];
-    player.type = 'black';
-    if (!openCurriculumMode) {
-        timer(level);
-    };
-    addWaste();
+const newGame = () => {
+  screen = "game";
+  lives = startLives;
+  score = 0;
+  difficulty = startDifficulty;
+  if (!openCurriculumMode) {
+    level = 1;
+  } else {
+    level = 4;
+  };
+  boss = false;
+  bossBegin = false;
+  roundWon = false;
+  startClick = 0;
+  startMail = 0;
+  speedUp = false;
+  keyList = [];
+
+  startAddWaste();
+
+  player.type = 'black';
+  if (!openCurriculumMode) {
+      timer(level);
+  };
 };
+
 
 //Starts tutorial
 const startTutorial = () => {
+  //Go to first page of tutorial
   tutorialPage = 0;
   screen = "game";
-    lives = startLives;
-    score = 0;
-    difficulty = startDifficulty;
-    level = 1;
-    wasteList = [];
-    boss = false;
-    bossBegin = false;
-    roundWon = false;
-    startClick = 0;
-    startMail = 0;
-    speedUp = false;
-    keyList = [];
-    player.type = 'black';
-    wasteList = [];
+  lives = startLives;
+  score = 0;
+  difficulty = startDifficulty;
+  level = 1;
+  wasteList = [];
+  boss = false;
+  bossBegin = false;
+  roundWon = false;
+  startClick = 0;
+  startMail = 0;
+  speedUp = false;
+  keyList = [];
+  player.type = 'black';
+  wasteList = [];
 };
 
-function togglePause() {
-    if (pause == false) {
-        screen = "instruction1";
-        pause = true;
-        console.log("toggling");
-    } else {
-        screen = "game";
-        pause = false;
+
+//Pause game if not paused, or unpause game if paused
+const togglePause = () => {
+  //Pause game if not paused (go to first page of instructions)
+  if (pause == false) {
+    screen = "instruction1";
+    pause = true;
+  //Unpause game if paused
+  } else {
+    screen = "game";
+    pause = false;
+  }
+};
+
+
+//Draw Special item notifications and between-round screens
+const notifications = () => {
+  //Draw between-round notifications for rounds 1 and 2 (after round 3, game goes to end screen)
+  if (roundWon == true) {
+    if (level == 1) {
+      canvasContext.drawImage(complete1, (800/2 - (complete1.width/1)/2) * screenWidth/800, (600/2 - (complete1.height/1)/2) * screenHeight/600, complete1.width/1 * screenWidth/800, complete1.height/1 * screenHeight/600);
+    } else if (level == 2) {
+      canvasContext.drawImage(complete2, (800/2 - (complete2.width/1)/2) * screenWidth/800, (600/2 - (complete2.height/1)/2) * screenHeight/600, complete2.width/1 * screenWidth/800, complete2.height/1 * screenHeight/600);
+    };
+  //Draw special item notifications
+  } else {
+    //Draw Morning Mail announcements (including "Join Scrap")
+    if (startMail > 0) {
+      canvasContext.drawImage(todayNotification, screenWidth - (todayNotification.width * 1.5 + 10) * screenWidth/800, 10 * screenHeight/600, todayNotification.width * 1.5 * screenWidth/800, todayNotification.height * 1.5 * screenHeight/600);
+
+      canvasContext.drawImage(announcement1, (800/2 - announcement1.width/2) * screenWidth/800, screenHeight/3 + (player.img.height + 5) * screenHeight/600, announcement1.width * screenWidth/800, announcement1.height * screenHeight/600);
+      
+      //If player has iClicker and morning mail at the same time, put the announcements at different heights
+      if (startClick > 0) {
+        canvasContext.drawImage(clickerNotification, screenWidth - (clickerNotification.width * 1.5 + 10) * screenWidth/800, 50 * screenHeight/600, clickerNotification.width * 1.5 * screenWidth/800, clickerNotification.height * 1.5 * screenHeight/600);
+      }
+    //If player just has iClicker, draw that announcement in the top right
+    } else if (startClick > 0) {
+      canvasContext.drawImage(clickerNotification, screenWidth - (clickerNotification.width * 1.5 + 10) * screenWidth/800, 10 * screenHeight/600, clickerNotification.width * 1.5 * screenWidth/800, clickerNotification.height * 1.5 * screenHeight/600);
     }
+  }
 };
 
 
-function notifications() {
-    if (roundWon == true) {
-        if (level == 1) {
-            canvasContext.drawImage(complete1, (800/2 - (complete1.width/1)/2) * screenWidth/800, (600/2 - (complete1.height/1)/2) * screenHeight/600, complete1.width/1 * screenWidth/800, complete1.height/1 * screenHeight/600);
-        } else if (level == 2) {
-            canvasContext.drawImage(complete2, (800/2 - (complete2.width/1)/2) * screenWidth/800, (600/2 - (complete2.height/1)/2) * screenHeight/600, complete2.width/1 * screenWidth/800, complete2.height/1 * screenHeight/600);
-        };
-    } else {
-        if (startMail > 0) {
-            canvasContext.drawImage(todayNotification, screenWidth - (todayNotification.width * 1.5 + 10) * screenWidth/800, 10 * screenHeight/600, todayNotification.width * 1.5 * screenWidth/800, todayNotification.height * 1.5 * screenHeight/600);
-            
-            canvasContext.drawImage(announcement1, (800/2 - announcement1.width/2) * screenWidth/800, screenHeight/3 + (player.img.height + 5) * screenHeight/600, announcement1.width * screenWidth/800, announcement1.height * screenHeight/600);
-
-            if (startClick > 0) {
-                canvasContext.drawImage(clickerNotification, screenWidth - (clickerNotification.width * 1.5 + 10) * screenWidth/800, 50 * screenHeight/600, clickerNotification.width * 1.5 * screenWidth/800, clickerNotification.height * 1.5 * screenHeight/600);
-            }
-        } else if (startClick > 0) {
-            canvasContext.drawImage(clickerNotification, screenWidth - (clickerNotification.width * 1.5 + 10) * screenWidth/800, 10 * screenHeight/600, clickerNotification.width * 1.5 * screenWidth/800, clickerNotification.height * 1.5 * screenHeight/600);
-        }
+//Load caption interval
+const loadAction = () => {
+  screen = "load";
+  
+  //Update the load caption at the end of each iteration of the interval
+  let loadInterval = setInterval(function() {
+    if (loadStep == 5) {
+      clearInterval(loadInterval);
     }
-};
 
-function loadAction() {
-    screen = "load";
-    
-    var loadInterval = setInterval(function() {
-        if (loadStep == 5) {
-            clearInterval(loadInterval);
-        }
-        
-        if (loadCaptionCount == 5) {
-            loadStep += 1;
-        };
-    }, 1000);
+    if (loadCaptionCount == 5) {
+      loadStep += 1;
+    };
+  }, 1000);
     
 };
 
+
+//end all gameplay timeouts and intervals
 const clearAllTimeouts = () => {
   clearTimeout(mailTime);
   difficulty = startDifficulty;
@@ -1807,6 +2074,8 @@ const clearAllTimeouts = () => {
   clearInterval(progress);
 }
 
+
+//Fade in music
 const fadeIn = () => {
   let fadeInInterval = setInterval(function() {
     if (musicPlayer.volume <= 0.4) {
@@ -1819,29 +2088,38 @@ const fadeIn = () => {
   
 }
 
+
+//Fade out of current background song and into inputted song
 const fadeTo = songTitle => {
-  const toBosspromise = new Promise((resolve, reject) => {
+  //Create a promise that resolves when the current song is faded out completely
+  const toNewSongPromise = new Promise((resolve, reject) => {
+    //Fade song out slightly at each iteration of the interval
     let fadeOutInterval = setInterval(() => {
       if (musicPlayer.volume >= 0.1) {
         musicPlayer.volume -= 0.1;
       } else {
+        //If music is not paused, play the new song immediately
         if (!musicPlayer.paused) {
           musicPlayer.src = "music/" + songTitle + ".m4a";
           musicPlayer.play();
+        //If music is paused, change to the new song, but leave it paused
         } else {
           musicPlayer.src = "music/" + songTitle + ".m4a";
         };
-
+        
+        //Once the song is faded out all the way, end the fade out interval
         clearInterval(fadeOutInterval);
 
         resolve();
       }
 
     }, 50);
+  //Once song is completely faded out and changed to the new song, bring volume back up
   }).then(fadeIn);
 }
 
 
+//Update the game frame tick at every iteration of animate() whenever there are sprites
 const tickUpdate = () => {
   frameTick += 1;
   if (frameTick > 17) {
@@ -1849,38 +2127,23 @@ const tickUpdate = () => {
   };
 }
 
-const changeTutorialPageOnSpace = () => {
 
-  if (tutorialPage == 3 && wasteList.length == 0) {
-    addSingleWaste("chips");
-  } else if (tutorialPage == 4 && wasteList.length == 0) {
-    addSingleWaste("coldCup");
-  } else if ((tutorialPage == 5 || tutorialPage == 6) && wasteList.length == 0) {
-    let newWaste = wasteTypes[Math.floor(Math.random()*(wasteTypes.length - 4))];
-    addSingleWaste(newWaste.name);
-  } else if (tutorialPage == 7 && wasteList.length == 0) {
-    addSingleWaste("smoothie");
-  } else if (tutorialPage == 8 && wasteList.length == 0) {
-    addSingleWaste("pembroke");
-  } else if (tutorialPage == 10) {
-    endTutorial();
-  } else if (tutorialPage == 0 || tutorialPage == 1 || tutorialPage == 2 || tutorialPage == 9) {
-    tutorialPage ++;
-  }
-}
-
+//Start a new game at the end of the tutorial
 const endTutorial = () => {
   tutorialPage = 0;
   needsTutorial = false;
   newGame();
 }
 
+
+//Determine what to do when a waste item is sorted in the tutorial
 const tutorialWasteHit = waste => {
+  //Move to the next page for chip and coldCup page
+  //Move to the next page for Morning Mail page if morning mail was already clicked
   if (wasteList.length - 1 == 0 && tutorialPage != 6) {
     tutorialPage ++;
-  /*} else if (wasteList.length - 1 == 0 && tutorialPage == 6) {
-    addSingleWaste(waste.name);
-  */} else if (tutorialPage == 5 || tutorialPage == 6) {
+  //If morning mail not clicked yet, or if the player is on iClicker page, start the activity again
+  } else if (tutorialPage == 5 || tutorialPage == 6) {
     waste.miss.play();
     wasteList = [];
     addSingleWaste(waste.name);
@@ -1888,30 +2151,42 @@ const tutorialWasteHit = waste => {
   clearAllTimeouts();
 }
 
+
+//Determine what to do when a waste item is missed in the tutorial
 const tutorialWasteMiss = waste => {
   
+  //Move to the next page for the Pembroke Seal
   if (tutorialPage == 8) {
     waste.correct.play();
     tutorialPage ++;
+  //For all other pages
   } else {
     waste.miss.play();
-
+    
+    //If morning mail or iClicker are missed, add a random waste item
+    //New morning mail / iClicker will be added when the new waste reaches a certain x position
     if (waste.name == 'morningMail' || waste.name == 'iClicker') {
       let newWaste = wasteTypes[Math.floor(Math.random()*(wasteTypes.length - 4))];
       addSingleWaste(newWaste.name);
     } else {
+      //Lose a life in the coldCup section (but do not allow game to end if lives <= 0)
       if (tutorialPage == 7) {
         lives --;
+      //If regular waste is missed on the morning mail or iClicker page, start the activity over
       } else if (tutorialPage == 5 || tutorialPage == 6) {
         wasteList = [];
       }
       
+      //Add this waste item again
       addSingleWaste(waste.name);
     };
   };
 }
 
+
+//Determine what to do when a waste item is clicked in the tutorial
 const tutorialWasteClick = () => {
+  //If Morning Mail or iClicker clicked after the other waste was already sorted, start over the activity
   if (wasteList.length - 1 == 0) {
     let newWaste = wasteTypes[Math.floor(Math.random()*(wasteTypes.length - 4))];
     addSingleWaste(newWaste.name);
@@ -1920,10 +2195,14 @@ const tutorialWasteClick = () => {
   }
 }
 
+
+//Draw the tutorial caption centered vertically and slightly to the right of center
 const drawEachTutorial = page => {
   canvasContext.drawImage(page, (800 - tutorial1.width - 20) * screenWidth/800, (600/2 - page.height/2) * screenHeight/600, page.width * screenWidth/800, page.height * screenHeight/600);
 }
 
+
+//Draw the proper tutorial caption (do not draw captions if playing the activity)
 const drawTutorial = () => {
   if (tutorialPage == 0) {
     drawEachTutorial(tutorial0);
@@ -1950,263 +2229,282 @@ const drawTutorial = () => {
   }
 }
 
-function setup() {
-    canvas = document.getElementById('gameCanvas');
-    canvasContext = canvas.getContext('2d');
-    canvasContext.mozImageSmoothingEnabled = false;
-    canvasContext.webkitImageSmoothingEnabled = false;
-    canvasContext.msImageSmoothingEnabled = false;
-    canvasContext.imageSmoothingEnabled = false;
+
+//Set up canvas, canvasContext, and determine resize properties
+const setup = () => {
+  canvas = document.getElementById('gameCanvas');
+  canvasContext = canvas.getContext('2d');
+  canvasContext.mozImageSmoothingEnabled = false;
+  canvasContext.webkitImageSmoothingEnabled = false;
+  canvasContext.msImageSmoothingEnabled = false;
+  canvasContext.imageSmoothingEnabled = false;
 }
 
 // -----------------------------------------    Draw Screens ---------------------------------------------//
 
 
 //This function draws everything on the screen
-function drawGame() {
-    tickUpdate();
-    if (!openCurriculumMode) {    
-        if (level == 1) {
-            canvasContext.drawImage(josBackground,0,0, screenWidth, screenHeight);
-        } else if (level == 3) {
-            if (rattyVersion == 0) {
-              canvasContext.drawImage(rattyBackground, 0, 0, screenWidth, screenHeight);
-            } else if (rattyVersion == 1) {
-              canvasContext.drawImage(rattyEasterEgg, 0, 0, screenWidth, screenHeight);
-            } else if (rattyVersion == 2) {
-              canvasContext.drawImage(rodentEasterEgg, 0, 0, screenWidth, screenHeight);
-            }
-        } else if (level == 2) {
-            canvasContext.drawImage(andrewsBackground, 0, 0, screenWidth, screenHeight);
-        };
-    } else {
-        canvasContext.drawImage(bossBackground, 0, 0, screenWidth, screenHeight);
-    };
-    player.draw();
-    
-    if (boss == true) {
-        bossFight(level);
-    }   
-    
-    if (needsTutorial) {
-      drawTutorial();
-    };
-    
-    wasteList.forEach(function(waste) {
-        waste.draw();
-    });
-    
-    challenges();
-    directionButtons.forEach(function(button) {
-        button.draw();
-    });
-    
-    notifications();
-    
-    buttons.forEach(function(button) {
-        if (button.name == "pauseButton" || (button.name == "muteButton" && mute == true) || (button.name == "volumeButton" && mute == false)) {
-            button.draw();
-        };
-    });
-    
-    if (!needsTutorial || tutorialPage == 7 || tutorialPage == 8) {
-      //Draw Lives
-      canvasContext.drawImage(wordBackground, screenWidth* 0.5/10, screenHeight*0.8/10, screenWidth*2.5/10, screenHeight*1/10);
-      colorText("LIVES: " + lives, screenWidth * 0.5/10 + screenWidth*2.5/10/2, screenHeight*1.6/10, 'black');
-    };
-    
-    if (!needsTutorial) {
-      //Draw score for open curriculum, time left for game
-      canvasContext.drawImage(wordBackground, screenWidth*3.75/10, screenHeight*0.8/10, screenWidth*2.5/10, screenHeight*1/10);
-      if (!openCurriculumMode) {
-        colorText(gameTime, screenWidth/2, screenHeight*1.6/10, 'black');
-      } else {
-          colorText("SCORE: " + score, screenWidth/2, screenHeight*1.6/10, 'black');
-      };    
-    };
-}
-
-function drawTitle() {
-    //Draw Background
-    canvasContext.drawImage(vanWickle, 0,0, screenWidth, screenHeight);
-
-    //Draw text, scaled according to screen size
-    if (plmeMode == false && riptaTitle == false) {
-        canvasContext.drawImage(title, screenWidth/2 - (title.width*screenWidth/800)/2, 10*screenHeight/600, screenWidth*title.width/800, screenHeight*title.height/600);
-    } else if (plmeMode) {
-        canvasContext.drawImage(plmeTitle, screenWidth/2 - (plmeTitle.width*screenWidth/800)/2, 10*screenHeight/600, screenWidth*plmeTitle.width/800, screenHeight*title.height/600);
-    } else if (riptaTitle) {
-      canvasContext.drawImage(riptaEasterEgg, screenWidth/2 - (riptaEasterEgg.width*screenWidth/800)/2, 10*screenHeight/600, screenWidth*riptaEasterEgg.width/800, screenHeight*riptaEasterEgg.height/600);
-    }
-    
-           
-    /*canvasContext.drawImage(clickToPlay, screenWidth/2 - (clickToPlay.width*screenWidth/800)/2, screenHeight*500/600, screenWidth*clickToPlay.width/800, screenHeight*clickToPlay.height/600);
-    
-    canvasContext.drawImage(pressSpaceForInstructions, screenWidth/2 - (pressSpaceForInstructions.width*screenWidth/800)/2, screenHeight/2, pressSpaceForInstructions.width*screenWidth/800, pressSpaceForInstructions.height*screenHeight/600);*/
-    
-    menuButtons.forEach(function(button) {
-        if (button.name == "playButton" || button.name == "helpButton" || button.name == "moreButton" || (button.name == "openCurriculum" && openCurriculumUnlocked) || (button.name == "abc" && mode != "abc" && plmeMode == false) || (button.name == "snc" && mode != "snc" && plmeMode == false) || (button.name == "audit" && mode != "audit" && plmeMode == false) || (button.name == "muteButton" && mute == true) || (button.name == "volumeButton" && mute == false)) {
-            button.draw();
-        };
-    });
-    
-    if (mode == "abc") {
-        canvasContext.drawImage(abcStatic, ((800/2 - 24) - (50 + 37) - (50/2 - 38/2)) * screenWidth/800, (600 * 9.4/10 - (26/2 - 17/2)) * screenHeight/600, 50 * screenWidth/800, 26 * screenHeight/600);
-    } else if (mode == "snc") {
-        canvasContext.drawImage(sncStatic, (800/2 - 70/2) * screenWidth/800, (600 * 9.4/10 - (26/2 - 17/2))* screenHeight/600, 70 * screenWidth/800, 26 * screenHeight/600);
-    } else {
-        canvasContext.drawImage(auditStatic, (800/2 + 50 + 24 - (87/2 - 57/2)) * screenWidth/800, (600 * 9.4/10 - (26/2 - 17/2)) * screenHeight/600, 87 * screenWidth/800, 26 * screenHeight/600);
-    }
-    
-    canvasContext.drawImage(difficultyMode, screenWidth/2 - 62 * screenWidth/800, screenHeight * 8.9/10, 123 * screenWidth/800, 17 * screenHeight/600);
-
-    
-    //Draw BiG logo, scaled according to page size
-    if (!bigClicked) {
-      canvasContext.drawImage(bigLogo, screenWidth*5/800, screenHeight*495/600, bigLogo.width*screenWidth/800, bigLogo.height*screenHeight/600);
-    } else {
-      tickUpdate();
-      spriteUpdate(bigSprite, 1, 2, screenWidth*5/800, screenHeight*495/600);
-    };
-    
-    /*var testPowerUp = new PowerUp({}, wasteTypes[1], 0);   
-    testPowerUp.draw;*/
-}
-
-function drawInstruction() {
-    //Draw background
-    if (pause == false) {
-        canvasContext.drawImage(vanWickle, 0, 0, screenWidth, screenHeight);
-    } else if (level == 1) {
-        canvasContext.drawImage(josBackground, 0, 0, screenWidth, screenHeight);
+const drawGame = () => {
+  //Update game frame tick
+  tickUpdate();
+  
+  // ** Draw Level Backgrounds **
+  
+  if (!openCurriculumMode) {   
+    //Draw Jo's Level background
+    if (level == 1) {
+      canvasContext.drawImage(josBackground,0,0, screenWidth, screenHeight);
+    //Draw Ratty Background (change it slightly for Easter Eggs)
     } else if (level == 3) {
+      if (rattyVersion == 0) {
         canvasContext.drawImage(rattyBackground, 0, 0, screenWidth, screenHeight);
+      } else if (rattyVersion == 1) {
+        canvasContext.drawImage(rattyEasterEgg, 0, 0, screenWidth, screenHeight);
+      } else if (rattyVersion == 2) {
+        canvasContext.drawImage(rodentEasterEgg, 0, 0, screenWidth, screenHeight);
+      }
+    //Draw Andrews Level Background
     } else if (level == 2) {
-        canvasContext.drawImage(andrewsBackground, 0, 0, screenWidth, screenHeight);
-    } else if (level == 4) {
-        canvasContext.drawImage(bossBackground, 0, 0, screenWidth, screenHeight);
+      canvasContext.drawImage(andrewsBackground, 0, 0, screenWidth, screenHeight);
     };
-    
-    //Decide which page of instructions to display
-    if (screen == "instruction1") {
-        canvasContext.drawImage(instructions1, 0, 0, screenWidth, screenHeight);
-    } else if (screen == "instruction2") {
-        canvasContext.drawImage(instructions2, 0, 0, screenWidth, screenHeight);
-    } else if (screen == "instruction3") {
-        canvasContext.drawImage(instructions3, 0, 0, screenWidth, screenHeight);
-    }
-    
+  //Draw Open Curriculum Mode Background
+  } else {
+    canvasContext.drawImage(bossBackground, 0, 0, screenWidth, screenHeight);
+  };
+  
+  //Draw player sprite
+  player.draw();
+  
+  
+  //Draw boss fight
+  if (boss == true) {
+      bossFight(level);
+  }   
 
-    //Draw buttons
-    /*menuButtons.forEach(function(button) {
-        button.draw();
-    });*/
-    menuButtons.forEach(function(button) {
-        if ((button.name == "backButton" && (pause == false || (screen == "instruction2" || screen == "instruction3"))) || button.name == "playButton") {
-            button.draw();
-        } else if (button.name == "nextButton" && (screen == "instruction1" || screen == "instruction2")) {
-            button.draw();
-        } else if (button.name == "menuButton" && screen == "instruction1" && pause == true) {
-            button.draw();
-        } else if ((button.name == "muteButton" && mute == true) || (button.name == "volumeButton" && mute == false)) {
-            button.draw();
-        };
+
+  //Draw tutorial
+  if (needsTutorial) {
+    drawTutorial();
+  };
+
+
+  //Draw every waste item on screen
+  wasteList.forEach(function(waste) {
+    waste.draw();
+  });
+
+
+  //Draw all challenges (Last Call, Pho Line, Ice Cream)
+  challenges();
+  
+  
+  //Draw direction buttons (A,W,D)
+  directionButtons.forEach(function(button) {
+    button.draw();
+  });
+
+
+  //Draw all notifications (Morning Mail, Join Scrap, iClicker)
+  notifications();
+
+
+  //Draw pause button and sound buttons
+  buttons.forEach(function(button) {
+    if (button.name == "pauseButton" || (button.name == "volumeButton" && mute == true) || (button.name == "muteButton" && mute == false)) {
+      button.draw();
+    };
+  });
+
+  
+  //Only draw lives for regular game or last two tutorial activities
+  if (!needsTutorial || tutorialPage == 7 || tutorialPage == 8) {
+    //Draw Lives
+    canvasContext.drawImage(wordBackground, screenWidth* 0.5/10, screenHeight*0.8/10, screenWidth*2.5/10, screenHeight*1/10);
+    colorText("LIVES: " + lives, screenWidth * 0.5/10 + screenWidth*2.5/10/2, screenHeight*1.6/10, 'black');
+  };
+
+
+  //Do not draw time for the tutorial
+  if (!needsTutorial) {
+    //Draw score for open curriculum, time left for game
+    canvasContext.drawImage(wordBackground, screenWidth*3.75/10, screenHeight*0.8/10, screenWidth*2.5/10, screenHeight*1/10);
+    if (!openCurriculumMode) {
+      colorText(gameTime, screenWidth/2, screenHeight*1.6/10, 'black');
+    } else {
+      colorText("SCORE: " + score, screenWidth/2, screenHeight*1.6/10, 'black');
+    };    
+  };
+}
+
+
+//Draw Title screen
+const drawTitle = () => {
+  //Draw Background
+  canvasContext.drawImage(vanWickle, 0,0, screenWidth, screenHeight);
+
+  //Draw title
+  if (plmeMode == false && riptaTitle == false) {
+    canvasContext.drawImage(title, screenWidth/2 - (title.width*screenWidth/800)/2, 10*screenHeight/600, screenWidth*title.width/800, screenHeight*title.height/600);
+  //Draw plme Easter Egg title
+  } else if (plmeMode) {
+    canvasContext.drawImage(plmeTitle, screenWidth/2 - (plmeTitle.width*screenWidth/800)/2, 10*screenHeight/600, screenWidth*plmeTitle.width/800, screenHeight*title.height/600);
+  //Draw Ripta Easter Egg Title
+  } else if (riptaTitle) {
+    canvasContext.drawImage(riptaEasterEgg, screenWidth/2 - (riptaEasterEgg.width*screenWidth/800)/2, 10*screenHeight/600, screenWidth*riptaEasterEgg.width/800, screenHeight*riptaEasterEgg.height/600);
+  }
+
+
+  //Draw all menu buttons
+  menuButtons.forEach(function(button) {
+    if (button.name == "playButton" || button.name == "helpButton" || button.name == "moreButton" || (button.name == "openCurriculum" && openCurriculumUnlocked) || (button.name == "abc" && mode != "abc" && plmeMode == false) || (button.name == "snc" && mode != "snc" && plmeMode == false) || (button.name == "audit" && mode != "audit" && plmeMode == false) || (button.name == "volumeButton" && mute == true) || (button.name == "muteButton" && mute == false)) {
+      button.draw();
+    };
+  });
+  
+  
+  //Draw difficulty buttons with the selected one in its selected state
+  if (mode == "abc") {
+    canvasContext.drawImage(abcStatic, ((800/2 - 24) - (50 + 37) - (50/2 - 38/2)) * screenWidth/800, (600 * 9.4/10 - (26/2 - 17/2)) * screenHeight/600, 50 * screenWidth/800, 26 * screenHeight/600);
+  } else if (mode == "snc") {
+    canvasContext.drawImage(sncStatic, (800/2 - 70/2) * screenWidth/800, (600 * 9.4/10 - (26/2 - 17/2))* screenHeight/600, 70 * screenWidth/800, 26 * screenHeight/600);
+  } else { //Audit
+    canvasContext.drawImage(auditStatic, (800/2 + 50 + 24 - (87/2 - 57/2)) * screenWidth/800, (600 * 9.4/10 - (26/2 - 17/2)) * screenHeight/600, 87 * screenWidth/800, 26 * screenHeight/600);
+  }
+  
+  //Draw difficulty mode caption
+  canvasContext.drawImage(difficultyMode, screenWidth/2 - 62 * screenWidth/800, screenHeight * 8.9/10, 123 * screenWidth/800, 17 * screenHeight/600);
+
+
+  //Draw BiG logo
+  if (!bigClicked) {
+    canvasContext.drawImage(bigLogo, screenWidth*5/800, screenHeight*495/600, bigLogo.width*screenWidth/800, bigLogo.height*screenHeight/600);
+  //Draw BiG sprite Easter Egg
+  } else {
+    tickUpdate();
+    spriteUpdate(bigSprite, 1, 2, screenWidth*5/800, screenHeight*495/600);
+  };
+}
+
+
+const drawInstruction = () => {
+  //Draw background
+  if (pause == false) {
+    canvasContext.drawImage(vanWickle, 0, 0, screenWidth, screenHeight);
+  } else if (level == 1) {
+    canvasContext.drawImage(josBackground, 0, 0, screenWidth, screenHeight);
+  } else if (level == 3) {
+    canvasContext.drawImage(rattyBackground, 0, 0, screenWidth, screenHeight);
+  } else if (level == 2) {
+    canvasContext.drawImage(andrewsBackground, 0, 0, screenWidth, screenHeight);
+  } else if (level == 4) {
+    canvasContext.drawImage(bossBackground, 0, 0, screenWidth, screenHeight);
+  };
+
+  //Decide which page of instructions to display
+  if (screen == "instruction1") {
+    canvasContext.drawImage(instructions1, 0, 0, screenWidth, screenHeight);
+  } else if (screen == "instruction2") {
+    canvasContext.drawImage(instructions2, 0, 0, screenWidth, screenHeight);
+  } else if (screen == "instruction3") {
+    canvasContext.drawImage(instructions3, 0, 0, screenWidth, screenHeight);
+  }
+
+  //Draw all necessary menu buttons
+  menuButtons.forEach(function(button) {
+    if ((button.name == "backButton" && (pause == false || (screen == "instruction2" || screen == "instruction3"))) || button.name == "playButton") {
+      button.draw();
+    } else if (button.name == "nextButton" && (screen == "instruction1" || screen == "instruction2")) {
+      button.draw();
+    } else if (button.name == "menuButton" && screen == "instruction1" && pause == true) {
+      button.draw();
+    } else if ((button.name == "volumeButton" && mute == true) || (button.name == "muteButton" && mute == false)) {
+      button.draw();
+    };
+  });
+
+  
+  //Draw descriptive buttons on the second instruction page
+  if(screen == "instruction2") {
+    descriptiveButtons.forEach(function(button) {
+      button.draw();
     });
-    
-    if(screen == "instruction2") {
-        descriptiveButtons.forEach(function(button) {
-            button.draw();
-        });
-        for (var i = 0; i < descriptiveButtons.length; i++) {
-            descriptiveButtons[i].drawDescription(/*descriptions[i]*/);
-        };/*
-        descriptiveButtons.forEach(function(button) {
-            button.drawDescription(descriptions);
-        });*/
-        /*
-        chipsButton.draw();
-        coldCupButton.draw();
-        glassBottleButton.draw();
-        lactaidButton.draw();
-        marinaraButton.draw();
-        plasticWareButton.draw();*/
-        
-
+    for (let i = 0; i < descriptiveButtons.length; i++) {
+      descriptiveButtons[i].drawDescription();
     };
-    
+  }; 
 };
 
-function drawEnd() {
-    //level = 1;
-    //Draw Background
-    //colorRect(0, 0, canvas.width, canvas.height, '#74FF48');
-    
-        //Calculate high score
-    if (openCurriculumMode && score > highScore) {
-        highScore = score;
-    };
-    
-    if (!openCurriculumMode && lives > 0) {
-        canvasContext.drawImage(winScreen, 0, 0, screenWidth, screenHeight);
-    
+
+//Draw End Screen
+const drawEnd = () => {    
+  //Calculate high score for Open Curriculum Mode
+  if (openCurriculumMode && score > highScore) {
+    highScore = score;
+  };
+  
+  
+  //Draw Win Screen
+  if (!openCurriculumMode && lives > 0) {
+    canvasContext.drawImage(winScreen, 0, 0, screenWidth, screenHeight);
+
+    //Draw William Easter Egg in Win Screen
     if (williamWasHere) {
       canvasContext.drawImage(williamEasterEgg, 15*screenWidth/800, 365*screenHeight/600, 34*screenWidth/800, 34*screenWidth/800 * williamEasterEgg.height/williamEasterEgg.width);
     }
     
-    } else if (!openCurriculumMode && lives < 1) {
-        canvasContext.drawImage(loseScreen, 0, 0, screenWidth, screenHeight);
-    } else {
-        canvasContext.drawImage(openCurriculumEnd, 0, 0, screenWidth, screenHeight);
-        
-        canvasContext.drawImage(wordBackground, screenWidth*3.75/10, screenHeight*3/10, screenWidth*2.5/10, screenHeight*1/10);
-        colorText("SCORE: " + score, screenWidth/2, screenHeight*3.8/10, 'black');
-    
-        canvasContext.drawImage(wordBackground, screenWidth*3.75/10, screenHeight*4.5/10, screenWidth*2.5/10, screenHeight*1/10);
-        colorText("HIGH: " + highScore, screenWidth/2, screenHeight*5.3/10, 'black');
+  //Draw Lose Screen
+  } else if (!openCurriculumMode && lives < 1) {
+    canvasContext.drawImage(loseScreen, 0, 0, screenWidth, screenHeight);
+  //Draw Open Curriculum End Screen
+  } else {
+    canvasContext.drawImage(openCurriculumEnd, 0, 0, screenWidth, screenHeight);
+
+    //Draw Score
+    canvasContext.drawImage(wordBackground, screenWidth*3.75/10, screenHeight*3/10, screenWidth*2.5/10, screenHeight*1/10);
+    colorText("SCORE: " + score, screenWidth/2, screenHeight*3.8/10, 'black');
+
+    //Draw High Score
+    canvasContext.drawImage(wordBackground, screenWidth*3.75/10, screenHeight*4.5/10, screenWidth*2.5/10, screenHeight*1/10);
+    colorText("HIGH: " + highScore, screenWidth/2, screenHeight*5.3/10, 'black');
+  }
 
 
-    }
-    
-    
-    //Draw Text
-    /*colorText("Nice trash sorting", canvas.width/2, 100, 'black')
-    canvasContext.font = "40px Arial";
-    colorText("You ended up with " + score + " points", canvas.width/2, 200, 'black');
-    canvasContext.font = "30px Arial";
-    colorText("Your high score is " + highScore + " points", canvas.width/2, 300, 'black');
-    canvasContext.font = "60px Arial";
-    colorText("Click to Play Again", canvas.width/2, canvas.height*3/4, 'black');*/
-    
-    menuButtons.forEach(function(button) {
-        if (button.name == "menuButton" || button.name == "helpButton" || button.name == "playButton" || (button.name == "openCurriculum" && openCurriculumUnlocked) || (button.name == "muteButton" && mute == true) || (button.name == "volumeButton" && mute == false)) {
-            button.draw();
-        };
-    });
-    
+  //Draw all necessary menu buttons
+  menuButtons.forEach(function(button) {
+    if (button.name == "menuButton" || button.name == "helpButton" || button.name == "playButton" || (button.name == "openCurriculum" && openCurriculumUnlocked) || (button.name == "volumeButton" && mute == true) || (button.name == "muteButton" && mute == false)) {
+      button.draw();
+    };
+  });
 }
 
 
-function drawLoad() {
-    tickUpdate();
+const drawLoad = () => {
+  //Update frame tick for the loading sprite
+  tickUpdate();
     
-    colorRect(0, 0, screenWidth, screenHeight, '#00cb00');
-    spriteUpdate(loading, 1, 3, (800 - loading.img.width/3)/2 * screenWidth/800, (600 - loading.img.height)/2 * screenHeight/600);
-    
-    if (loadCaptionCount == 5) {
-        if (loadStep == 0) {
-            canvasContext.drawImage(load1, (800 - load1.width)/2 * screenWidth/800, screenHeight*2/3, load1.width*screenWidth/800, load1.height*screenHeight/600);
-        } else if (loadStep == 1) {
-            canvasContext.drawImage(load2, (800 - load2.width)/2 * screenWidth/800, screenHeight*2/3, load2.width*screenWidth/800, load2.height*screenHeight/600);
-        } else if (loadStep == 2) {
-            canvasContext.drawImage(load3, (800 - load3.width)/2 * screenWidth/800, screenHeight*2/3, load3.width*screenWidth/800, load3.height*screenHeight/600);
-        } else if (loadStep == 3) {
-            canvasContext.drawImage(load4, (800 - load4.width)/2 * screenWidth/800, screenHeight*2/3, load4.width*screenWidth/800, load4.height*screenHeight/600);
-        } else if (loadStep == 4) {
-            canvasContext.drawImage(load5, (800 - load5.width)/2 * screenWidth/800, screenHeight*2/3, load5.width*screenWidth/800, load5.height*screenHeight/600);
-        } else if (loadStep == 5) {
-            if (loadCount >= 130) {
-                screen = "title";
-            };
-        };
-    }
+  //Draw background
+  colorRect(0, 0, screenWidth, screenHeight, '#00cb00');
+  
+  //Draw loading sprite
+  spriteUpdate(loading, 1, 3, (800 - loading.img.width/3)/2 * screenWidth/800, (600 - loading.img.height)/2 * screenHeight/600);
+
+  //Draw the proper caption
+  if (loadCaptionCount == 5) {
+    if (loadStep == 0) {
+      canvasContext.drawImage(load1, (800 - load1.width)/2 * screenWidth/800, screenHeight*2/3, load1.width*screenWidth/800, load1.height*screenHeight/600);
+    } else if (loadStep == 1) {
+      canvasContext.drawImage(load2, (800 - load2.width)/2 * screenWidth/800, screenHeight*2/3, load2.width*screenWidth/800, load2.height*screenHeight/600);
+    } else if (loadStep == 2) {
+      canvasContext.drawImage(load3, (800 - load3.width)/2 * screenWidth/800, screenHeight*2/3, load3.width*screenWidth/800, load3.height*screenHeight/600);
+    } else if (loadStep == 3) {
+      canvasContext.drawImage(load4, (800 - load4.width)/2 * screenWidth/800, screenHeight*2/3, load4.width*screenWidth/800, load4.height*screenHeight/600);
+    } else if (loadStep == 4) {
+      canvasContext.drawImage(load5, (800 - load5.width)/2 * screenWidth/800, screenHeight*2/3, load5.width*screenWidth/800, load5.height*screenHeight/600);
+    } else if (loadStep == 5) {
+      //Only go on to title screen once all images are loaded
+      if (loadCount >= 130) {
+        screen = "title";
+      };
+    };
+  };
 };
