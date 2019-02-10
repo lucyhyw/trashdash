@@ -1,0 +1,33 @@
+/*  Adds the Trash Dash font, used for time and lives displays
+    Different formats available for different browser compatabilities  */
+@font-face {
+  font-family: 'Trash Dash';
+  src: url('font/Trash-Dash.woff2') format('woff2'),
+      url('font/Trash-Dash.woff') format('woff'),
+      url('font/Trash-Dash.ttf') format('truetype'),
+      url('font/Trash-Dash.svg#Trash-Dash') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+
+/* removes page scroll and margin between window edges and the canvas */
+body {
+  overflow: hidden;
+  margin: 0;
+}
+
+canvas {
+  /* Centers canvas on the window */
+  margin: 0 auto;
+  display: block;
+  
+  /* Removes default cursor when mouse is in the canvas area */
+  cursor: none;
+}
+
+/* Hides default audio controls */
+iframe,
+audio {
+  display: none;
+}
