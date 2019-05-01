@@ -36,11 +36,7 @@ let startDifficulty = 1.7;
 let openCurriculumMode = false;
 /*open curriculum mode is unlocked when all 3 levels are beaten.
 When true open curriculum button appears and the mode becomes playable */
-let openCurriculumUnlocked = true;
-// initials identifier used in the leaderboards for open curriculum mode
-let initials = "";
-let winner = false;
-let scores = []
+let openCurriculumUnlocked = false;
 
 
 // ** Interval Promises **
@@ -82,7 +78,6 @@ let fakeTrees = [];
 // ** screen change variables **
 //Determines which game screen to show when drawing
 let screen;
-let endScreen = 'initials';
 //Which level the player is on. Set in newGame() function
 let level;
 //Indicates whether or not the round has been won (and boss defeated)
@@ -90,7 +85,7 @@ let roundWon = false;
 
 // ** Easter Eggs **
 //BiG Easter Egg: true indicates BiG logo has been clicked
-// let bigClicked = false;
+let bigClicked = false;
 //Ratty Easter Egg: Determines what shows up in the Ratty sign (0 for Sharpe, 1 for Ratty, 2 for Rodent)
 let rattyVersion = 0;
 //Counts how many times "more" button has been clicked to determine if plmeMode should become true
@@ -128,8 +123,6 @@ let colorChange = false;
 let score = 0;
 //Records the highest score of the player during this play session
 let highScore = 0;
-// Records if the score has been sent to the server
-let apiCall = false;
 
 
 // ** Outside-of-gameplay controls **
@@ -158,7 +151,7 @@ let loadStep = 0;
 // **** Static images - text, logos, backgrounds ****
 
 //staticImageText is an array of names (w/out doc type) of all static images (must be in static image folder)
-let staticImageText = ["title", "clickToPlay", "pressSpaceForInstructions", /*"bigLogo",*/ "vanWickle", "instructions1", "instructions2", "instructions3", "josBackground", "rattyBackground", "andrewsBackground", "bossBackground", "iceCream", "andrewsCrowd", "wordBackground", "highscoresBackground", "initialsBase", "healthBar", "lastCall", "brokenMachine", "phoLine", "winScreen", "loseScreen", "openCurriculumEnd", "difficultyMode", "abcStatic", "sncStatic", "auditStatic", "plmeTitle", "bluenoIntro", "rockTreeIntro", "riptaIntro", "complete1", "complete2", "todayNotification", "clickerNotification", "announcement1", "healthLabel", "tutorial0", "tutorial1", "tutorial2", "tutorial3", "tutorial4", "tutorial5", "tutorial6", "tutorial7", "tutorial8", "tutorial9", "tutorial10", "rattyEasterEgg", "rodentEasterEgg", "williamEasterEgg", "riptaEasterEgg"];
+let staticImageText = ["title", "clickToPlay", "pressSpaceForInstructions", "bigLogo", "vanWickle", "instructions1", "instructions2", "instructions3", "josBackground", "rattyBackground", "andrewsBackground", "bossBackground", "iceCream", "andrewsCrowd", "wordBackground", "healthBar", "lastCall", "brokenMachine", "phoLine", "winScreen", "loseScreen", "openCurriculumEnd", "difficultyMode", "abcStatic", "sncStatic", "auditStatic", "plmeTitle", "bluenoIntro", "rockTreeIntro", "riptaIntro", "complete1", "complete2", "todayNotification", "clickerNotification", "announcement1", "healthLabel", "tutorial0", "tutorial1", "tutorial2", "tutorial3", "tutorial4", "tutorial5", "tutorial6", "tutorial7", "tutorial8", "tutorial9", "tutorial10", "rattyEasterEgg", "rodentEasterEgg", "williamEasterEgg", "riptaEasterEgg"];
 //An array to hold all static images once initialized
 let staticImages = [];
 
@@ -629,7 +622,7 @@ let menuButtons = [
 //More Button takes the player to Brown Sustainability homepage
 new Button("moreButton", 800 * 1/10, 600 * 7/10, function() {
     if (this.hover && screen == "title") {
-        window.open("https://www.brown.edu/sustainability/");
+        window.open("https://www.brown.edu/initiatives/brown-is-green/home");
         //After 10 clicks in one play session, activates plmeMode Easter Egg
         plmeCount += 1;
         if (plmeCount >= 10) {
@@ -685,7 +678,7 @@ new Button("nextButton", 800 * 9/10 - 150, 600 * 7/10, function() {
 new Button("playButton", 800/2 - 150/2, 600 * 7.5/10, function() {
     if (this.hover) {
         //Deactivate BiG Easter Egg
-        // bigClicked = false;
+        bigClicked = false;
         //Start game when playButton pressed
         if (pause == false) {
             openCurriculumMode = false;
@@ -707,7 +700,7 @@ new Button("playButton", 800/2 - 150/2, 600 * 7.5/10, function() {
 new Button("helpButton", 800 * 9/10 - 150, 600 * 7/10, function() {
     if(this.hover && (screen == "end" || screen == "title")) {
         //Deactivates BiG Easter Egg
-        // bigClicked = false;
+        bigClicked = false;
         screen = "instruction1";
     }
 }),
@@ -715,7 +708,6 @@ new Button("helpButton", 800 * 9/10 - 150, 600 * 7/10, function() {
 new Button("openCurriculum", 800/2 - 150/2, 600 * 6/10, function() {
     //Only works if openCurriculum mode is unlocked (by completing the regular game)
     if (this.hover && openCurriculumUnlocked == true) {
-        needsTutorial = false;
         openCurriculumMode = true;
         fadeTo('actionSong');
         newGame();
@@ -767,45 +759,6 @@ new Button("muteButton", 800 * 8/10, 600 * 9.4/10, function() {
         musicPlayer.pause();
     }
 })];
-
-let letterButtons = []
-const letters = ['a', 'b', 'c', 'd', 'e', 'f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'];
-letters.forEach(function(letter, i) {
-    const x = 100 + (i % 13) * 45;
-    const y = 350 + 65 * Math.floor(i / 13);
-    const b = new Button(letter + "-charButton",x, y, function() {
-        if (this.hover && initials.length < 3 && endScreen == 'initials') {
-           initials += letter;
-        } 
-    })
-    b.letter = letter;
-    letterButtons.push(b)
-})
-
-const backspaceButton = new Button("backspaceButton", 800 * 3/10, 600 * 8.4/10, function() {
-  if (this.hover && initials.length > 0 && endScreen == 'initials') {
-    initials = initials.substring(0, initials.length - 1)
-  }
-})
-
-const nextInitialButton = new Button("nextInitialButton", 800 * 5/10, 600 * 8.4/10, function() {
-  if (this.hover && initials.length > 0) {
-    endScreen = 'leaderboards'
-  }
-})
-
-//Open Curriculum Menu Button takes player back to title page
-const opMenuButton = new Button("opMenuButton", 800 * 7/10, 600 * 6/10, function() {
-  if (this.hover && (screen == "end")) {
-      openCurriculumMode = false;
-      apiCall = true;
-      scores = [];
-      winner = false;
-      
-      fadeTo('actionSong');
-      screen = "title";
-  }
-})
 
 
 // ** Descriptive Buttons **
@@ -922,13 +875,13 @@ let loading = {
 
 
 // ** BiG Easter Egg Sprite **
-// var bigSprite = {
-//   img: document.createElement("img"),
-//   x: screenWidth*5/800,
-//   y: screenHeight*495/600,
-//   frames: 2,
-//   currentFrame: 1
-// }
+var bigSprite = {
+  img: document.createElement("img"),
+  x: screenWidth*5/800,
+  y: screenHeight*495/600,
+  frames: 2,
+  currentFrame: 1
+}
 
 
 
@@ -985,8 +938,7 @@ window.onload = function() {
     }
 
     // ** Load player sprite **
-    // player.img.src = "images/sprites/runWilliam.png";
-    player.img.src = "bear_draft_one.png";
+    player.img.src = "images/sprites/runWilliam.png";
     player.img.onload = function() {
         loadCount += 1;
     };
@@ -1025,10 +977,10 @@ window.onload = function() {
     
     
     // ** Load BiG Easter Egg **
-    // bigSprite.img.src = "images/sprites/bigSprite.png";
-    // bigSprite.img.onload - function() {
-    //   loadCount += 1;
-    // };
+    bigSprite.img.src = "images/sprites/bigSprite.png";
+    bigSprite.img.onload - function() {
+      loadCount += 1;
+    };
     
 
     // ** Load Button Sprites **
@@ -1040,17 +992,6 @@ window.onload = function() {
             loadCount += 1;
         };
     };
-
-    opMenuButton.img.src = "images/buttons/opMenuButton.png"
-    nextInitialButton.img.src = "images/buttons/nextInitialButton.png"
-    backspaceButton.img.src = "images/buttons/backspaceButton.png"
-
-    for (let i = 0; i < letterButtons.length; i++) {
-        letterButtons[i].img.src = "images/buttons/charButton.png"
-        letterButtons[i].img.onload = function() {
-            loadCount += 1;
-        }
-    }
     
     //Load descriptive buttons
     for (let i = 0; i < descriptiveButtons.length; i++) {
@@ -1196,14 +1137,6 @@ const handleMouseMove = () => {
     buttons.forEach(function(button) {
       button.mouseOver(mousePos.x, mousePos.y);
     });
-
-    opMenuButton.mouseOver(mousePos.x, mousePos.y);
-    backspaceButton.mouseOver(mousePos.x, mousePos.y);
-    nextInitialButton.mouseOver(mousePos.x, mousePos.y);
-
-    letterButtons.forEach(button => {
-          button.mouseOver(mousePos.x, mousePos.y);
-  })
     
     //If mouse hovering over descriptive buttons, show their description
     descriptiveButtons.forEach(function(button) {
@@ -1376,30 +1309,16 @@ const handleMouseClick = () => {
       if (screen == "end" && lives > 0 && mousePos.x > 31 && mousePos.x < 43*screenWidth/800 && mousePos.y > 258*screenHeight/600 && mousePos.y < 267*screenHeight/600) {
         williamWasHere = !williamWasHere;
       //BiG Easter Egg if BiG logo clicked on title screen
-      } /*else if (screen == "title" && mousePos.x > screenWidth * 5/800 && mousePos.x < screenWidth*5/800 + bigLogo.width*screenWidth/800 && mousePos.y > screenHeight * 495/600 && mousePos.y < screenHeight * 495/600 + bigLogo.height*screenHeight/600) {
+      } else if (screen == "title" && mousePos.x > screenWidth * 5/800 && mousePos.x < screenWidth*5/800 + bigLogo.width*screenWidth/800 && mousePos.y > screenHeight * 495/600 && mousePos.y < screenHeight * 495/600 + bigLogo.height*screenHeight/600) {
         bigClicked = true;
-      };*/
+      };
       
-      if (!openCurriculumMode) {
-        //Handle button presses for all buttons except sound buttons (those are handled in handleMouseUp() function)
-        buttons.forEach(button => {
-          if (button.name != "volumeButton" && button.name != "muteButton") {
-            button.action();
-          }
-        });
-      } else {
-        if (endScreen == 'initials') {
-            letterButtons.forEach(button => {
-              button.action();
-          })
-          nextInitialButton.action();
-          backspaceButton.action();
-        } else if (endScreen == 'leaderboards') {
-          // TODO: Deploy Server
-          // TODO: Make Logo
-          opMenuButton.action();
+      //Handle button presses for all buttons except sound buttons (those are handled in handleMouseUp() function)
+      buttons.forEach(button => {
+        if (button.name != "volumeButton" && button.name != "muteButton") {
+          button.action();
         }
-      }
+      });
 
     };
   });
@@ -1854,13 +1773,8 @@ const pembrokePower = waste => {
     //If the cursor touches the pembroke seal during the tutorial, add a new pembroke seal, but do not allow game to end
     if (needsTutorial) {
       addSingleWaste("pembroke");
-      // prevents loss from happening during tutorial
-      if (lives == -1) {
-        lives = 3;
-      }
     //If regular gameplay and player runs out of lives (not on audit mode), end game
-    } 
-    if(lives <= 0 && mode != "audit" && !needsTutorial) {
+    } else if(lives <= 0 && mode != "audit") {
       wasteList = [];
       clearAllTimeouts();
       fadeTo('winSong');
@@ -2405,7 +2319,7 @@ const drawGame = () => {
 
   
   //Only draw lives for regular game or last two tutorial activities
-  if (!needsTutorial || tutorialPage == 7 || tutorialPage == 8 || openCurriculumUnlocked) {
+  if (!needsTutorial || tutorialPage == 7 || tutorialPage == 8) {
     //Draw Lives
     canvasContext.drawImage(wordBackground, screenWidth* 0.5/10, screenHeight*0.8/10, screenWidth*2.5/10, screenHeight*1/10);
     colorText("LIVES: " + lives, screenWidth * 0.5/10 + screenWidth*2.5/10/2, screenHeight*1.6/10, 'black');
@@ -2464,13 +2378,13 @@ const drawTitle = () => {
 
 
   //Draw BiG logo
-  // if (!bigClicked) {
-  //   canvasContext.drawImage(bigLogo, screenWidth*5/800, screenHeight*495/600, bigLogo.width*screenWidth/800, bigLogo.height*screenHeight/600);
-  // //Draw BiG sprite Easter Egg
-  // } else {
-  //   tickUpdate();
-  //   spriteUpdate(bigSprite, 1, 2, screenWidth*5/800, screenHeight*495/600);
-  // };
+  if (!bigClicked) {
+    canvasContext.drawImage(bigLogo, screenWidth*5/800, screenHeight*495/600, bigLogo.width*screenWidth/800, bigLogo.height*screenHeight/600);
+  //Draw BiG sprite Easter Egg
+  } else {
+    tickUpdate();
+    spriteUpdate(bigSprite, 1, 2, screenWidth*5/800, screenHeight*495/600);
+  };
 }
 
 
@@ -2524,21 +2438,14 @@ const drawInstruction = () => {
 
 
 //Draw End Screen
-const drawEnd = () => {  
+const drawEnd = () => {    
   //Calculate high score for Open Curriculum Mode
   if (openCurriculumMode && score > highScore) {
     highScore = score;
   };
   
+  
   //Draw Win Screen
-  if (!openCurriculumMode) {
-    //Draw all necessary menu buttons
-    menuButtons.forEach(function(button) {
-      if (button.name == "menuButton" || button.name == "helpButton" || button.name == "playButton" || (button.name == "openCurriculum" && openCurriculumUnlocked) || (button.name == "volumeButton" && mute == true) || (button.name == "muteButton" && mute == false)) {
-        button.draw();
-      };
-    });
-  }
   if (!openCurriculumMode && lives > 0) {
     canvasContext.drawImage(winScreen, 0, 0, screenWidth, screenHeight);
 
@@ -2551,76 +2458,25 @@ const drawEnd = () => {
   } else if (!openCurriculumMode && lives < 1) {
     canvasContext.drawImage(loseScreen, 0, 0, screenWidth, screenHeight);
   //Draw Open Curriculum End Screen
-  } else if (openCurriculumMode && endScreen == 'initials') {
+  } else {
     canvasContext.drawImage(openCurriculumEnd, 0, 0, screenWidth, screenHeight);
-    letterButtons.forEach(function(button, i) { 
-        button.draw();
-        colorText(button.letter,(i % 13 * 0.0556 * screenWidth) + 2.9/18 * screenWidth, (Math.floor(i / 13) * screenHeight*1.1/10)+ 6.65/10*screenHeight, 'black');
-    })
-    backspaceButton.draw();
-    nextInitialButton.draw();
-    canvasContext.drawImage(initialsBase, screenWidth*3/10, screenHeight*2.5/10, screenWidth*4/10, screenHeight*3/10);
-    colorText(initials, screenWidth / 2, screenHeight * 5.1 / 10)
 
     //Draw Score
-    canvasContext.drawImage(wordBackground, screenWidth*3.75/10, screenHeight*0.4/10, screenWidth*2.5/10, screenHeight*1/10);
-    colorText("SCORE: " + score, screenWidth/2, screenHeight*1.2/10, 'black');
-    apiCall = true;
-  }
-  if (endScreen == 'leaderboards') { // If the user has finished entering their initials
-    canvasContext.drawImage(highscoresBackground, 0, 0, screenWidth, screenHeight);
-    colorText("Great job, " + initials, screenWidth * 2.95/4, screenHeight * 2.8 / 10)
-    if (winner) {
-      colorText("Send a photo of", screenWidth * 2.95/ 4, screenHeight * 3.4 / 10)
-      colorText("this screen to", screenWidth * 2.95/ 4, screenHeight * 4 / 10)
-      colorText("get a prize.", screenWidth * 2.95/ 4, screenHeight * 4.6 / 10)
-    } else {
-      colorText("Score in the", screenWidth * 2.95/ 4, screenHeight * 3.4 / 10)
-      colorText("top 5 to win", screenWidth * 2.95/ 4, screenHeight * 4 / 10)
-      colorText("a prize.", screenWidth * 2.95/ 4, screenHeight * 4.6 / 10)
-    }
-    if (scores.length > 0) {
-      // if we've received leaderboard information from the server
-      scores.forEach(function(s, i) {
-        colorText((i + 1) + ".", screenWidth / 8.2, screenHeight * (3.6 + 0.8 * i) / 10)
-        colorText(s.initials, screenWidth / 5, screenHeight * (3.6 + 0.8 * i) / 10)
-        colorText(s.points, screenWidth / 2.6, screenHeight * (3.6 + 0.8 * i) / 10)
-      })
-    } else {
-      // write server error
-      colorText("Game error.", screenWidth / 4, screenHeight * 5 / 10)
-      colorText("Try again soon.", screenWidth / 4, screenHeight * 5.6 / 10)
-    }
-    colorText(initials, screenWidth / 5, screenHeight * (3.6 + 0.8 * 5) / 10)
-    colorText(score, screenWidth / 2.6, screenHeight * (3.6 + 0.8 * 5) / 10)
-    //Draw menu button for the end of the open curriculum section
-    opMenuButton.draw();
+    canvasContext.drawImage(wordBackground, screenWidth*3.75/10, screenHeight*3/10, screenWidth*2.5/10, screenHeight*1/10);
+    colorText("SCORE: " + score, screenWidth/2, screenHeight*3.8/10, 'black');
 
-    if (apiCall) {
-      const url = 'https://td-server.herokuapp.com/post-score'
-      fetch(url, {
-        method: "POST",
-        body: JSON.stringify({
-          initials,
-          points: score,
-        }),
-        headers: {"Content-Type": "application/json"},
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.winner) {
-          winner = true
-        }
-        console.log(data)
-        scores = data.scores
-      })
-      .catch(error => {
-        winner = false
-        scores = false
-      })
-      apiCall = false; // reset boolean such that the API will not be called again
-    }
+    //Draw High Score
+    canvasContext.drawImage(wordBackground, screenWidth*3.75/10, screenHeight*4.5/10, screenWidth*2.5/10, screenHeight*1/10);
+    colorText("HIGH: " + highScore, screenWidth/2, screenHeight*5.3/10, 'black');
   }
+
+
+  //Draw all necessary menu buttons
+  menuButtons.forEach(function(button) {
+    if (button.name == "menuButton" || button.name == "helpButton" || button.name == "playButton" || (button.name == "openCurriculum" && openCurriculumUnlocked) || (button.name == "volumeButton" && mute == true) || (button.name == "muteButton" && mute == false)) {
+      button.draw();
+    };
+  });
 }
 
 
@@ -2648,7 +2504,7 @@ const drawLoad = () => {
       canvasContext.drawImage(load5, (800 - load5.width)/2 * screenWidth/800, screenHeight*2/3, load5.width*screenWidth/800, load5.height*screenHeight/600);
     } else if (loadStep == 5) {
       //Only go on to title screen once all images are loaded
-      if (loadCount >= 156) {
+      if (loadCount >= 130) {
         screen = "title";
       };
     };
