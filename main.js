@@ -649,7 +649,7 @@ new Button("menuButton", 800 * 1/10, 600 * 7/10, function() {
             //Clears progress time, morningMail powerup time, iClicker powerup time, addWaste repeat
             clearAllTimeouts();
         };
-        
+        openCurriculumMode = false;
         fadeTo('actionSong');
         screen = "title";
     }
@@ -1388,6 +1388,14 @@ const handleMouseClick = () => {
           }
         });
       } else {
+        if (pause) {
+           //Handle button presses for all buttons except sound buttons (those are handled in handleMouseUp() function)
+          buttons.forEach(button => {
+            if (button.name != "volumeButton" && button.name != "muteButton") {
+              button.action();
+            }
+          });
+        }
         if (endScreen == 'initials') {
             letterButtons.forEach(button => {
               button.action();
@@ -1395,7 +1403,6 @@ const handleMouseClick = () => {
           nextInitialButton.action();
           backspaceButton.action();
         } else if (endScreen == 'leaderboards') {
-          // TODO: Deploy Server
           // TODO: Make Logo
           opMenuButton.action();
         }
@@ -2026,13 +2033,13 @@ player.draw = function() {
 //Resize the canvas maintaining 600/800 aspect ratio whenever the window is resized
 function resizeScreen() {
   //redraw canvas such that screenHeight/screenWidth = 600/800 for any window
-  
+  document.body.style.height = window.innerHeight + 'px';
   if (window.innerWidth < window.innerHeight*800/600) {
-    screenWidth = (window.innerWidth);
-    screenHeight = (window.innerWidth)*600/800;
+    screenWidth = (window.innerWidth * 0.9);
+    screenHeight = (window.innerWidth * 0.9)*600/800;
   } else {
-    screenWidth = (window.innerHeight)*800/600;
-    screenHeight = (window.innerHeight);
+    screenWidth = (window.innerHeight * 0.9)*800/600;
+    screenHeight = (window.innerHeight * 0.9);
   }
 }
 
@@ -2588,8 +2595,8 @@ const drawEnd = () => {
       })
     } else {
       // write server error
-      colorText("Game error.", screenWidth / 4, screenHeight * 5 / 10)
-      colorText("Try again soon.", screenWidth / 4, screenHeight * 5.6 / 10)
+      colorText("Loading Server.", screenWidth / 4, screenHeight * 5 / 10)
+      colorText("Please wait.", screenWidth / 4, screenHeight * 5.6 / 10)
     }
     colorText(initials, screenWidth / 5, screenHeight * (3.6 + 0.8 * 5) / 10)
     colorText(score, screenWidth / 2.6, screenHeight * (3.6 + 0.8 * 5) / 10)

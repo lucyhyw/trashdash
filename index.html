@@ -20,14 +20,18 @@
 <link rel="stylesheet" type="text/css" href="style.css" />
 </head>
 
-<!-- Creates the playing field for the game. Everything in the game
-     is contained within the canvas. Starting dimensions are not
-     necessary because the game rescales for different screen
-     sizes
--->
-<canvas id="gameCanvas"></canvas>
-
 <body>
+
+    <!-- Creates the playing field for the game. Everything in the game
+        is contained within the canvas. Starting dimensions are not
+        necessary because the game rescales for different screen
+        sizes
+    -->
+    <div id="game">
+        <div class="container">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+    </div>
 
 <!-- Audio element plays the background music on loop
      Music source changed in fadeTo() function
@@ -37,5 +41,6 @@
 
 <!-- All javascript code for this project is within these script tags -->
 <script src="main.js"></script>
+<script src="design.js"></script>
 </body>
 </html>

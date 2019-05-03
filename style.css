@@ -26,8 +26,45 @@ canvas {
   cursor: none;
 }
 
+
 /* Hides default audio controls */
 iframe,
 audio {
   display: none;
 }
+
+body {
+  display: flex;
+  align-items: center;
+  background: #222;
+  justify-content: center;
+}
+
+#game {
+  background: #222;
+  text-align: center;
+  /* align */
+}
+
+#game .container {
+  background: #444;
+  padding: 5%;
+  display: inline-block;
+  border-radius: 5%;
+}
+
+@keyframes fade {
+  0%   {box-shadow:  0 0 30px rgba(255,255,255,0.4)}
+  50%  {box-shadow:  0 0 80px rgba(255,255,255,0.8)}
+  100%  {box-shadow:  0 0 30px rgba(255,255,255,0.4)}
+}
+
+#game canvas {
+  box-shadow:  0 0 50px rgba(255,255,255,0.4);
+  /* animation-name: fade; */
+  /* animation-duration: 4s; */
+  /* animation-iteration-count: infinite; */
+  border-radius: 5px;
+  overflow:visible
+}
+
