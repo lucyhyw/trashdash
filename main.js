@@ -2536,16 +2536,7 @@ const drawEnd = () => {
   if (openCurriculumMode && score > highScore) {
     highScore = score;
   };
-  
   //Draw Win Screen
-  if (!openCurriculumMode) {
-    //Draw all necessary menu buttons
-    menuButtons.forEach(function(button) {
-      if (button.name == "menuButton" || button.name == "helpButton" || button.name == "playButton" || (button.name == "openCurriculum" && openCurriculumUnlocked) || (button.name == "volumeButton" && mute == true) || (button.name == "muteButton" && mute == false)) {
-        button.draw();
-      };
-    });
-  }
   if (!openCurriculumMode && lives > 0) {
     canvasContext.drawImage(winScreen, 0, 0, screenWidth, screenHeight);
 
@@ -2553,10 +2544,20 @@ const drawEnd = () => {
     if (williamWasHere) {
       canvasContext.drawImage(williamEasterEgg, 15*screenWidth/800, 365*screenHeight/600, 34*screenWidth/800, 34*screenWidth/800 * williamEasterEgg.height/williamEasterEgg.width);
     }
+    menuButtons.forEach(function(button) {
+      if (button.name == "menuButton" || button.name == "helpButton" || button.name == "playButton" || (button.name == "openCurriculum" && openCurriculumUnlocked) || (button.name == "volumeButton" && mute == true) || (button.name == "muteButton" && mute == false)) {
+        button.draw();
+      };
+    });
     
   //Draw Lose Screen
   } else if (!openCurriculumMode && lives < 1) {
     canvasContext.drawImage(loseScreen, 0, 0, screenWidth, screenHeight);
+    menuButtons.forEach(function(button) {
+      if (button.name == "menuButton" || button.name == "helpButton" || button.name == "playButton" || (button.name == "openCurriculum" && openCurriculumUnlocked) || (button.name == "volumeButton" && mute == true) || (button.name == "muteButton" && mute == false)) {
+        button.draw();
+      };
+    });
   //Draw Open Curriculum End Screen
   } else if (openCurriculumMode && endScreen == 'initials') {
     canvasContext.drawImage(openCurriculumEnd, 0, 0, screenWidth, screenHeight);
@@ -2574,7 +2575,7 @@ const drawEnd = () => {
     colorText("SCORE: " + score, screenWidth/2, screenHeight*1.2/10, 'black');
     apiCall = true;
   }
-  if (endScreen == 'leaderboards') { // If the user has finished entering their initials
+  if (openCurriculumMode && endScreen == 'leaderboards') { // If the user has finished entering their initials
     canvasContext.drawImage(highscoresBackground, 0, 0, screenWidth, screenHeight);
     colorText("Great job, " + initials, screenWidth * 2.95/4, screenHeight * 2.8 / 10)
     if (winner) {
@@ -2618,7 +2619,6 @@ const drawEnd = () => {
         if (data.winner) {
           winner = true
         }
-        console.log(data)
         scores = data.scores
       })
       .catch(error => {
